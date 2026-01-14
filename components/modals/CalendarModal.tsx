@@ -13,7 +13,7 @@ interface CalendarModalProps {
 }
 
 export function CalendarModal({ visible, onClose }: CalendarModalProps) {
-  const { currentTheme, t, reminders } = useAppState();
+  const { currentTheme, t, reminders, language } = useAppState();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [addReminderOpen, setAddReminderOpen] = useState(false);
   const [preselectedDate, setPreselectedDate] = useState("");
@@ -52,7 +52,12 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
     setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1));
   };
 
-  const monthName = selectedDate.toLocaleDateString("kk-KZ", { month: "long", year: "numeric" });
+  const localeMap: Record<string, string> = {
+    ru: "ru-RU",
+    kk: "kk-KZ",
+    en: "en-US",
+  };
+  const monthName = selectedDate.toLocaleDateString(localeMap[language] || "ru-RU", { month: "long", year: "numeric" });
   const days = getDaysInMonth();
   const today = new Date();
 
@@ -72,7 +77,12 @@ export function CalendarModal({ visible, onClose }: CalendarModalProps) {
         </View>
 
         <View style={styles.weekDays}>
-          {["Дс", "Сс", "Ср", "Бс", "Жм", "Сн", "Жк"].map((day, index) => (
+          {(language === "kk" 
+            ? ["Дс", "Сс", "Ср", "Бс", "Жм", "Сн", "Жк"]
+            : language === "en"
+            ? ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+            : ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+          ).map((day, index) => (
             <Text key={index} style={styles.weekDayText}>
               {day}
             </Text>

@@ -369,7 +369,7 @@ export default function MainScreen() {
                       <View style={styles.bookingOverlay}>
                         <View style={styles.bookingTextContainer}>
                           <Text style={styles.tallButtonTitle} numberOfLines={1}>
-                            ГОРОДСКОЙ ЧАТ
+                            {t.cityChat.toUpperCase()}
                           </Text>
                           <Text style={styles.buttonDescription} numberOfLines={1}>
                             {t.cityChatDesc}
@@ -394,7 +394,7 @@ export default function MainScreen() {
                       <View style={styles.bookingOverlay}>
                         <View style={styles.bookingTextContainer}>
                           <Text style={styles.tallButtonTitle} numberOfLines={1}>
-                            ЗАКАЗАТЬ
+                            {t.order.toUpperCase()}
                           </Text>
                           <Text style={styles.buttonDescription} numberOfLines={1}>
                             {t.orderDesc}
@@ -419,10 +419,10 @@ export default function MainScreen() {
                       <View style={styles.bookingOverlay}>
                         <View style={styles.bookingTextContainer}>
                           <Text style={styles.tallButtonTitle} numberOfLines={1}>
-                            ЗАБРОНИРОВАТЬ
+                            {t.booking.toUpperCase()}
                           </Text>
                           <Text style={styles.buttonDescription} numberOfLines={1}>
-                            Забронируйте столик или услугу
+                            {t.bookingDesc}
                           </Text>
                         </View>
                       </View>
