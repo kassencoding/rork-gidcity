@@ -295,19 +295,23 @@ export default function MainScreen() {
               onPress={() => setAiAssistantOpen(true)}
               testID="ai-assistant-main"
             >
-              <View style={styles.aiSolidInner}>
-                <View style={styles.aiHighlightGlow} />
-                <View style={styles.aiMainIconContainer}>
-                  <AnimatedSphere size={42} colors={[currentTheme.accent, currentTheme.neon] as any} />
+              <ImageBackground
+                source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/sitlq6c8zazke8ksh5ace' }}
+                style={styles.aiButtonBg}
+                imageStyle={styles.aiButtonImage}
+                resizeMode="cover"
+              >
+                <View style={styles.aiButtonOverlay}>
+                  <View style={styles.aiButtonTextContainer}>
+                    <Text style={styles.aiButtonTitle} numberOfLines={1}>
+                      {t.aiAssistant.toUpperCase()} ARIA
+                    </Text>
+                    <Text style={styles.aiButtonSubtitle} numberOfLines={1}>
+                      {t.askGidAssistant}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.aiTextContainer}>
-                  <Text style={styles.aiMainTitle} numberOfLines={1}>
-                    {t.aiAssistant} Aria
-                  </Text>
-                  <Text style={styles.aiSubtitle}>{t.askGidAssistant}</Text>
-                </View>
-                <ChevronRight size={20} color="rgba(255,255,255,0.5)" />
-              </View>
+              </ImageBackground>
             </TouchableOpacity>
 
             <View style={styles.modeSwitcher}>
@@ -891,52 +895,40 @@ const styles = StyleSheet.create({
     elevation: 8,
     marginBottom: 16,
   },
-  aiSolidInner: {
+  aiButtonBg: {
     flex: 1,
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    paddingHorizontal: 16,
-    gap: 12,
     borderRadius: 20,
     overflow: "hidden" as const,
-    position: "relative" as const,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-  },
-  aiHighlightGlow: {
-    position: "absolute" as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "45%",
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  aiMainIconContainer: {
-    alignItems: "center" as const,
     justifyContent: "center" as const,
-    zIndex: 1,
   },
-  aiTextContainer: {
+  aiButtonImage: {
+    borderRadius: 20,
+    opacity: 0.95,
+  },
+  aiButtonOverlay: {
     flex: 1,
-    zIndex: 1,
     justifyContent: "center" as const,
-    alignItems: "center" as const,
+    alignItems: "flex-end" as const,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
   },
-  aiMainTitle: {
+  aiButtonTextContainer: {
+    gap: 2,
+    alignItems: "flex-end" as const,
+  },
+  aiButtonTitle: {
     color: "#ffffff",
-    fontSize: 15,
-    fontWeight: "700" as const,
-    letterSpacing: -0.3,
-    textAlign: "center" as const,
+    fontSize: 13,
+    fontWeight: "600" as const,
+    letterSpacing: -0.2,
   },
-  aiSubtitle: {
+  aiButtonSubtitle: {
     color: "rgba(255,255,255,0.5)",
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "500" as const,
-    marginTop: 3,
     letterSpacing: -0.1,
-    textAlign: "center" as const,
   },
   modeSwitcher: {
     flexDirection: "row",
