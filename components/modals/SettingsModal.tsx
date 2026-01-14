@@ -449,7 +449,7 @@ export function SettingsModal({ visible, onClose }: SettingsModalProps) {
                     ))}
                   </View>
                 </View>
-                <View style={[styles.opacityPreview, { backgroundColor: `rgba(255, 255, 255, ${localGlassOpacity})` }]}>
+                <View style={[styles.opacityPreview, { backgroundColor: `rgba(45, 45, 50, ${Math.min(localGlassOpacity * 3 + 0.3, 0.95)})` }]}>
                   <Eye size={16} color="rgba(255,255,255,0.8)" />
                   <Text style={styles.opacityPreviewText}>Preview</Text>
                 </View>
