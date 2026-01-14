@@ -296,7 +296,7 @@ export default function MainScreen() {
               testID="ai-assistant-main"
             >
               <ImageBackground
-                source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/sitlq6c8zazke8ksh5ace' }}
+                source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/s00togqz2vrsgw7gzi3og' }}
                 style={styles.aiButtonBg}
                 imageStyle={styles.aiButtonImage}
                 resizeMode="cover"
