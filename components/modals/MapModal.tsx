@@ -29,7 +29,7 @@ export function MapModal({ visible, onClose }: MapModalProps) {
 
   useEffect(() => {
     if (visible) {
-      requestLocation();
+      void requestLocation();
     }
   }, [visible]);
 
@@ -48,9 +48,12 @@ export function MapModal({ visible, onClose }: MapModalProps) {
               });
               setLoading(false);
             },
-            (error) => {
-              console.error("Geolocation error:", error);
-              setError("Unable to get location");
+            (geoError) => {
+              console.error("Geolocation error code:", geoError.code, "message:", geoError.message);
+              setLocation({
+                latitude: 51.1694,
+                longitude: 71.4491,
+              });
               setLoading(false);
             }
           );
