@@ -1,16 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
-import { View, StyleSheet, Animated } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect, useRef } from "react";
+import { View, StyleSheet, Animated, ActivityIndicator, Image, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { useAppState } from "@/contexts/AppStateContext";
-import { commonColors } from "@/constants/colors";
+
+const { width, height } = Dimensions.get("window");
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const { hasSeenWelcome, setHasSeenWelcome, currentTheme, t, isLoaded } = useAppState();
-  const [showKazakh, setShowKazakh] = useState(true);
+  const { hasSeenWelcome, setHasSeenWelcome, isLoaded } = useAppState();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const glowAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -22,98 +20,30 @@ export default function WelcomeScreen() {
       return () => clearTimeout(timer);
     }
 
-    Animated.sequence([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 800,
-        delay: 1500,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setShowKazakh(false);
-      
-      Animated.sequence([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 800,
-          delay: 1500,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setHasSeenWelcome(true);
-        setTimeout(() => {
-          router.replace("/main" as any);
-        }, 100);
-      });
-    });
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
 
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, [hasSeenWelcome, isLoaded, router, fadeAnim, glowAnim, setHasSeenWelcome]);
+    const navigateTimer = setTimeout(() => {
+      setHasSeenWelcome(true);
+      router.replace("/main" as any);
+    }, 2500);
 
-  if (!isLoaded) {
-    return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={['#0a0015', '#1a0b2e', '#2d1b4e']}
-          style={styles.gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        />
-      </View>
-    );
-  }
-
-  const glowOpacity = glowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.3, 0.8],
-  });
+    return () => clearTimeout(navigateTimer);
+  }, [hasSeenWelcome, isLoaded, router, fadeAnim, setHasSeenWelcome]);
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#0a0015', '#1a0b2e', '#2d1b4e']}
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <Animated.View style={[styles.textContainer, { opacity: fadeAnim }]}>
-          <Animated.Text
-            style={[
-              styles.welcomeText,
-              {
-                color: currentTheme.neon,
-                textShadowColor: currentTheme.neon,
-                opacity: glowOpacity,
-              },
-            ]}
-          >
-            {showKazakh ? t.welcome1 : t.welcome2}
-          </Animated.Text>
-        </Animated.View>
-      </LinearGradient>
+      <Image
+        source={require("@/assets/images/splash.png")}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
+      <Animated.View style={[styles.loaderContainer, { opacity: fadeAnim }]}>
+        <ActivityIndicator size="large" color="#5bbde8" />
+      </Animated.View>
     </View>
   );
 }
@@ -121,22 +51,20 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#0a1628",
   },
-  gradient: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  backgroundImage: {
+    width: width,
+    height: height,
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
   },
-  textContainer: {
-    alignItems: "center",
-  },
-  welcomeText: {
-    fontSize: 36,
-    fontWeight: "800" as const,
-    textAlign: "center",
-    color: commonColors.textPrimary,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 25,
-    letterSpacing: -0.5,
+  loaderContainer: {
+    position: "absolute" as const,
+    bottom: 80,
+    left: 0,
+    right: 0,
+    alignItems: "center" as const,
   },
 });
