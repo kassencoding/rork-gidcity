@@ -1,10 +1,10 @@
 import React, { ReactNode } from "react";
-import { StyleSheet, View, ViewStyle } from "react-native";
+import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { useAppState } from "@/contexts/AppStateContext";
 
 interface GlassCardProps {
   children: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   neonColor?: string;
   solidBackground?: string;
 }
