@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
   Dimensions,
   ImageBackground,
   Platform,
+  PanResponder,
+  Animated,
+  Image,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -87,6 +90,53 @@ export default function MainScreen() {
   } | null>(null);
   const [dailyCheckinOpen, setDailyCheckinOpen] = useState(false);
   const [checkinTriggered, setCheckinTriggered] = useState(false);
+
+  const floatingPos = useRef(new Animated.ValueXY({ x: width - 76, y: height * 0.55 })).current;
+  const floatingScale = useRef(new Animated.Value(1)).current;
+  const isDragging = useRef(false);
+  const lastPos = useRef({ x: width - 76, y: height * 0.55 });
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dx) > 3 || Math.abs(gestureState.dy) > 3,
+      onPanResponderGrant: () => {
+        isDragging.current = false;
+        Animated.spring(floatingScale, {
+          toValue: 0.9,
+          useNativeDriver: true,
+        }).start();
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (Math.abs(gestureState.dx) > 3 || Math.abs(gestureState.dy) > 3) {
+          isDragging.current = true;
+        }
+        const newX = Math.max(8, Math.min(width - 68, lastPos.current.x + gestureState.dx));
+        const newY = Math.max(insets.top + 8, Math.min(height - 68 - insets.bottom, lastPos.current.y + gestureState.dy));
+        floatingPos.setValue({ x: newX, y: newY });
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        Animated.spring(floatingScale, {
+          toValue: 1,
+          useNativeDriver: true,
+        }).start();
+        const currentX = lastPos.current.x + gestureState.dx;
+        const currentY = lastPos.current.y + gestureState.dy;
+        const clampedY = Math.max(insets.top + 8, Math.min(height - 68 - insets.bottom, currentY));
+        const snapX = currentX < width / 2 ? 8 : width - 68;
+        lastPos.current = { x: snapX, y: clampedY };
+        Animated.spring(floatingPos, {
+          toValue: { x: snapX, y: clampedY },
+          useNativeDriver: true,
+          friction: 7,
+        }).start();
+        if (!isDragging.current) {
+          setAiAssistantOpen(true);
+        }
+      },
+    })
+  ).current;
 
 
   const { data: weather } = useQuery({
@@ -288,31 +338,6 @@ export default function MainScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-
-            <TouchableOpacity
-              style={styles.aiMainButton}
-              activeOpacity={0.85}
-              onPress={() => setAiAssistantOpen(true)}
-              testID="ai-assistant-main"
-            >
-              <ImageBackground
-                source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/s00togqz2vrsgw7gzi3og' }}
-                style={styles.aiButtonBg}
-                imageStyle={styles.aiButtonImage}
-                resizeMode="cover"
-              >
-                <View style={styles.aiButtonOverlay}>
-                  <View style={styles.aiButtonTextContainer}>
-                    <Text style={styles.aiButtonTitle} numberOfLines={1}>
-                      {t.aiAssistant.toUpperCase()} ARIA
-                    </Text>
-                    <Text style={styles.aiButtonSubtitle} numberOfLines={1}>
-                      {t.askGidAssistant}
-                    </Text>
-                  </View>
-                </View>
-              </ImageBackground>
-            </TouchableOpacity>
 
             <View style={styles.modeSwitcher}>
               <TouchableOpacity
@@ -772,6 +797,29 @@ export default function MainScreen() {
           onClose={() => setDailyCheckinOpen(false)} 
         />
 
+        <Animated.View
+          style={[
+            styles.floatingButton,
+            {
+              transform: [
+                { translateX: floatingPos.x },
+                { translateY: floatingPos.y },
+                { scale: floatingScale },
+              ],
+            },
+          ]}
+          {...panResponder.panHandlers}
+          testID="ai-floating-button"
+        >
+          <Image
+            source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/s00togqz2vrsgw7gzi3og' }}
+            style={styles.floatingButtonImage}
+          />
+          <View style={styles.floatingButtonOverlay}>
+            <Text style={styles.floatingButtonText}>AI</Text>
+          </View>
+        </Animated.View>
+
       </>
     );
   }
@@ -884,51 +932,42 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "900" as const,
   },
-  aiMainButton: {
-    height: 90,
-    borderRadius: 20,
+  floatingButton: {
+    position: "absolute" as const,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     overflow: "hidden" as const,
     shadowColor: "#0891b2",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 14,
-    elevation: 8,
-    marginBottom: 16,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 10,
+    zIndex: 9999,
   },
-  aiButtonBg: {
-    flex: 1,
-    borderRadius: 20,
-    overflow: "hidden" as const,
+  floatingButtonImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  floatingButtonOverlay: {
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 30,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    alignItems: "center" as const,
     justifyContent: "center" as const,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.25)",
   },
-  aiButtonImage: {
-    borderRadius: 20,
-    opacity: 0.95,
-  },
-  aiButtonOverlay: {
-    flex: 1,
-    justifyContent: "center" as const,
-    alignItems: "flex-end" as const,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-  },
-  aiButtonTextContainer: {
-    gap: 2,
-    alignItems: "flex-end" as const,
-  },
-  aiButtonTitle: {
+  floatingButtonText: {
     color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "600" as const,
-    letterSpacing: -0.2,
-  },
-  aiButtonSubtitle: {
-    color: "rgba(255,255,255,0.5)",
-    fontSize: 10,
-    fontWeight: "500" as const,
-    letterSpacing: -0.1,
+    fontSize: 14,
+    fontWeight: "800" as const,
+    letterSpacing: 1,
   },
   modeSwitcher: {
     flexDirection: "row",
