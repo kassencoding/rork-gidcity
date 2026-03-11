@@ -138,14 +138,23 @@ export function MapModal({ visible, onClose }: MapModalProps) {
             <MapView
               style={styles.map}
               provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-              initialRegion={{
-                latitude: location.latitude,
-                longitude: location.longitude,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
+              initialCamera={{
+                center: {
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                },
+                pitch: 60,
+                heading: 0,
+                altitude: 800,
+                zoom: 17,
               }}
               showsUserLocation
               showsMyLocationButton
+              showsBuildings={true}
+              showsCompass={true}
+              mapType="standard"
+              pitchEnabled={true}
+              rotateEnabled={true}
             >
               <Marker
                 coordinate={location}
