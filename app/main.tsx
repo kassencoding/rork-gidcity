@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import {
   View,
   Text,
@@ -29,32 +29,35 @@ import {
 } from "lucide-react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
-import { AnimatedSphere } from "@/components/AnimatedSphere";
-import { AnimatedParticles } from "@/components/AnimatedParticles";
-import { AnimatedWaves } from "@/components/AnimatedWaves";
-import { AnimatedCubes } from "@/components/AnimatedCubes";
-import { AnimatedRings } from "@/components/AnimatedRings";
-import { AnimatedLines } from "@/components/AnimatedLines";
-import { AnimatedStars } from "@/components/AnimatedStars";
-import { AnimatedGradientFlow } from "@/components/AnimatedGradientFlow";
-import { AnimatedSparkles } from "@/components/AnimatedSparkles";
-import { AnimatedHexagons } from "@/components/AnimatedHexagons";
 import { useAppState } from "@/contexts/AppStateContext";
 import { commonColors } from "@/constants/colors";
-import { SettingsModal } from "@/components/modals/SettingsModal";
-import { CalendarModal } from "@/components/modals/CalendarModal";
-import { NotificationsModal } from "@/components/modals/NotificationsModal";
-import { OrderModal } from "@/components/modals/OrderModal";
-import { CityChatModal } from "@/components/modals/CityChatModal";
-import { AIAssistantModal, AIAction } from "@/components/modals/AIAssistantModal";
-import { FindOrdersModal } from "@/components/modals/FindOrdersModal";
-import { MessengerModal } from "@/components/modals/MessengerModal";
-import { BookingModal } from "@/components/modals/BookingModal";
-import { ServiceAdsModal } from "@/components/modals/ServiceAdsModal";
-import { WalletModal } from "@/components/modals/WalletModal";
-import { MapModal } from "@/components/modals/MapModal";
-import { DailyCheckinModal } from "@/components/modals/DailyCheckinModal";
 import { useQuery } from "@tanstack/react-query";
+import type { AIAction } from "@/components/modals/AIAssistantModal";
+
+const AnimatedSphere = lazy(() => import("@/components/AnimatedSphere").then(m => ({ default: m.AnimatedSphere })));
+const AnimatedParticles = lazy(() => import("@/components/AnimatedParticles").then(m => ({ default: m.AnimatedParticles })));
+const AnimatedWaves = lazy(() => import("@/components/AnimatedWaves").then(m => ({ default: m.AnimatedWaves })));
+const AnimatedCubes = lazy(() => import("@/components/AnimatedCubes").then(m => ({ default: m.AnimatedCubes })));
+const AnimatedRings = lazy(() => import("@/components/AnimatedRings").then(m => ({ default: m.AnimatedRings })));
+const AnimatedLines = lazy(() => import("@/components/AnimatedLines").then(m => ({ default: m.AnimatedLines })));
+const AnimatedStars = lazy(() => import("@/components/AnimatedStars").then(m => ({ default: m.AnimatedStars })));
+const AnimatedGradientFlow = lazy(() => import("@/components/AnimatedGradientFlow").then(m => ({ default: m.AnimatedGradientFlow })));
+const AnimatedSparkles = lazy(() => import("@/components/AnimatedSparkles").then(m => ({ default: m.AnimatedSparkles })));
+const AnimatedHexagons = lazy(() => import("@/components/AnimatedHexagons").then(m => ({ default: m.AnimatedHexagons })));
+
+const SettingsModal = lazy(() => import("@/components/modals/SettingsModal").then(m => ({ default: m.SettingsModal })));
+const CalendarModal = lazy(() => import("@/components/modals/CalendarModal").then(m => ({ default: m.CalendarModal })));
+const NotificationsModal = lazy(() => import("@/components/modals/NotificationsModal").then(m => ({ default: m.NotificationsModal })));
+const OrderModal = lazy(() => import("@/components/modals/OrderModal").then(m => ({ default: m.OrderModal })));
+const CityChatModal = lazy(() => import("@/components/modals/CityChatModal").then(m => ({ default: m.CityChatModal })));
+const AIAssistantModal = lazy(() => import("@/components/modals/AIAssistantModal").then(m => ({ default: m.AIAssistantModal })));
+const FindOrdersModal = lazy(() => import("@/components/modals/FindOrdersModal").then(m => ({ default: m.FindOrdersModal })));
+const MessengerModal = lazy(() => import("@/components/modals/MessengerModal").then(m => ({ default: m.MessengerModal })));
+const BookingModal = lazy(() => import("@/components/modals/BookingModal").then(m => ({ default: m.BookingModal })));
+const ServiceAdsModal = lazy(() => import("@/components/modals/ServiceAdsModal").then(m => ({ default: m.ServiceAdsModal })));
+const WalletModal = lazy(() => import("@/components/modals/WalletModal").then(m => ({ default: m.WalletModal })));
+const MapModal = lazy(() => import("@/components/modals/MapModal").then(m => ({ default: m.MapModal })));
+const DailyCheckinModal = lazy(() => import("@/components/modals/DailyCheckinModal").then(m => ({ default: m.DailyCheckinModal })));
 
 
 const { width, height } = Dimensions.get("window");
@@ -269,20 +272,22 @@ export default function MainScreen() {
       <>
         {animationType !== "none" && (
           <View style={styles.animationLayer} pointerEvents="none">
-            {animationType === "sphere" && (
-              <View style={styles.sphereAnimation}>
-                <AnimatedSphere size={300} colors={[currentTheme.accent, currentTheme.neon] as any} />
-              </View>
-            )}
-            {animationType === "particles" && <AnimatedParticles color={currentTheme.neon} />}
-            {animationType === "waves" && <AnimatedWaves color={currentTheme.accent} />}
-            {animationType === "cubes" && <AnimatedCubes color={currentTheme.neon} />}
-            {animationType === "rings" && <AnimatedRings color={currentTheme.accent} />}
-            {animationType === "lines" && <AnimatedLines color={currentTheme.neon} />}
-            {animationType === "stars" && <AnimatedStars color={currentTheme.accent} />}
-            {animationType === "gradientFlow" && <AnimatedGradientFlow color={currentTheme.neon} />}
-            {animationType === "sparkles" && <AnimatedSparkles color={currentTheme.accent} />}
-            {animationType === "hexagons" && <AnimatedHexagons color={currentTheme.neon} />}
+            <Suspense fallback={null}>
+              {animationType === "sphere" && (
+                <View style={styles.sphereAnimation}>
+                  <AnimatedSphere size={300} colors={[currentTheme.accent, currentTheme.neon] as any} />
+                </View>
+              )}
+              {animationType === "particles" && <AnimatedParticles color={currentTheme.neon} />}
+              {animationType === "waves" && <AnimatedWaves color={currentTheme.accent} />}
+              {animationType === "cubes" && <AnimatedCubes color={currentTheme.neon} />}
+              {animationType === "rings" && <AnimatedRings color={currentTheme.accent} />}
+              {animationType === "lines" && <AnimatedLines color={currentTheme.neon} />}
+              {animationType === "stars" && <AnimatedStars color={currentTheme.accent} />}
+              {animationType === "gradientFlow" && <AnimatedGradientFlow color={currentTheme.neon} />}
+              {animationType === "sparkles" && <AnimatedSparkles color={currentTheme.accent} />}
+              {animationType === "hexagons" && <AnimatedHexagons color={currentTheme.neon} />}
+            </Suspense>
           </View>
         )}
 
@@ -735,65 +740,70 @@ export default function MainScreen() {
           </ScrollView>
         </SafeAreaView>
 
-        <SettingsModal visible={settingsOpen} onClose={() => setSettingsOpen(false)} />
-        <CalendarModal visible={calendarOpen} onClose={() => setCalendarOpen(false)} />
-        <NotificationsModal visible={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
-        {activeModal === "order" && (
-          <OrderModal
-            visible
-            onClose={() => {
-              setActiveModal(null);
-              setAiOrderData(null);
-            }}
-            prefilledData={aiOrderData}
-          />
-        )}
-        {activeModal === "chat" && (
-          <CityChatModal visible onClose={() => setActiveModal(null)} />
-        )}
-        {activeModal === "findOrders" && (
-          <FindOrdersModal visible onClose={() => setActiveModal(null)} />
-        )}
-        {activeModal === "messenger" && (
-          <MessengerModal visible onClose={() => setActiveModal(null)} />
-        )}
-        {activeModal === "booking" && (
-          <BookingModal visible onClose={() => setActiveModal(null)} />
-        )}
-        {activeModal === "ads" && (
-          <ServiceAdsModal visible onClose={() => setActiveModal(null)} />
-        )}
-        {activeModal === "wallet" && (
-          <WalletModal visible onClose={() => setActiveModal(null)} />
-        )}
-        {activeModal === "myOrders" && (
-          <OrderModal
-            visible
-            onClose={() => setActiveModal(null)}
-            prefilledData={null}
-          />
-        )}
-        <MapModal visible={mapOpen} onClose={() => setMapOpen(false)} />
-        <DailyCheckinModal 
-          visible={dailyCheckinOpen} 
-          onClose={() => setDailyCheckinOpen(false)} 
-        />
-
-        <AIAssistantModal
-          visible={aiAssistantOpen}
-          onClose={() => setAiAssistantOpen(false)}
-          onAction={(action: AIAction) => {
-            if (action.type === "order" && action.data) {
-              setAiOrderData(action.data);
-              setActiveModal("order");
-            } else if (
-              action.type === "navigate" &&
-              (action.data?.screen === "services" || action.data?.screen === "work")
-            ) {
-              setActiveMode(action.data.screen);
-            }
-          }}
-        />
+        <Suspense fallback={null}>
+          {settingsOpen && <SettingsModal visible={settingsOpen} onClose={() => setSettingsOpen(false)} />}
+          {calendarOpen && <CalendarModal visible={calendarOpen} onClose={() => setCalendarOpen(false)} />}
+          {notificationsOpen && <NotificationsModal visible={notificationsOpen} onClose={() => setNotificationsOpen(false)} />}
+          {activeModal === "order" && (
+            <OrderModal
+              visible
+              onClose={() => {
+                setActiveModal(null);
+                setAiOrderData(null);
+              }}
+              prefilledData={aiOrderData}
+            />
+          )}
+          {activeModal === "chat" && (
+            <CityChatModal visible onClose={() => setActiveModal(null)} />
+          )}
+          {activeModal === "findOrders" && (
+            <FindOrdersModal visible onClose={() => setActiveModal(null)} />
+          )}
+          {activeModal === "messenger" && (
+            <MessengerModal visible onClose={() => setActiveModal(null)} />
+          )}
+          {activeModal === "booking" && (
+            <BookingModal visible onClose={() => setActiveModal(null)} />
+          )}
+          {activeModal === "ads" && (
+            <ServiceAdsModal visible onClose={() => setActiveModal(null)} />
+          )}
+          {activeModal === "wallet" && (
+            <WalletModal visible onClose={() => setActiveModal(null)} />
+          )}
+          {activeModal === "myOrders" && (
+            <OrderModal
+              visible
+              onClose={() => setActiveModal(null)}
+              prefilledData={null}
+            />
+          )}
+          {mapOpen && <MapModal visible={mapOpen} onClose={() => setMapOpen(false)} />}
+          {dailyCheckinOpen && (
+            <DailyCheckinModal 
+              visible={dailyCheckinOpen} 
+              onClose={() => setDailyCheckinOpen(false)} 
+            />
+          )}
+          {aiAssistantOpen && (
+            <AIAssistantModal
+              visible={aiAssistantOpen}
+              onClose={() => setAiAssistantOpen(false)}
+              onAction={(action: AIAction) => {
+                if (action.type === "order" && action.data) {
+                  setAiOrderData(action.data);
+                  setActiveModal("order");
+                } else if (
+                  action.type === "navigate" &&
+                  (action.data?.screen === "services" || action.data?.screen === "work")
+                ) {
+                  setActiveMode(action.data.screen);
+                }
+              }}
+            />
+          )}
+        </Suspense>
 
         <Animated.View
           style={[
