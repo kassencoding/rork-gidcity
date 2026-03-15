@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from "react-native";
-import { Home, Car, Package, Wrench, Sparkles } from "lucide-react-native";
+import { Home, Car, Package, Wrench, Sparkles, MapPin } from "lucide-react-native";
 import { GlassModal } from "../GlassModal";
 import { GlassButton } from "../GlassButton";
 import { useAppState } from "@/contexts/AppStateContext";
@@ -14,6 +14,8 @@ interface OrderModalProps {
     description?: string;
     deadline?: string;
     budget?: string;
+    startingPoint?: string;
+    destination?: string;
   } | null;
 }
 
@@ -33,7 +35,15 @@ export function OrderModal({ visible, onClose, prefilledData }: OrderModalProps)
   const [description, setDescription] = useState("");
   const [deadline, setDeadline] = useState("");
   const [budget, setBudget] = useState("");
+  const [startingPoint, setStartingPoint] = useState("");
+  const [destination, setDestination] = useState("");
   const [showAIPreview, setShowAIPreview] = useState(false);
+
+  const isTaxi = useMemo(() => {
+    if (!selectedService) return false;
+    const lower = selectedService.toLowerCase();
+    return lower.includes("такси") || lower.includes("taxi") || lower === t.taxi.toLowerCase();
+  }, [selectedService, t.taxi]);
 
   useEffect(() => {
     if (prefilledData) {
@@ -49,24 +59,51 @@ export function OrderModal({ visible, onClose, prefilledData }: OrderModalProps)
       if (prefilledData.budget) {
         setBudget(prefilledData.budget);
       }
+      if (prefilledData.startingPoint) {
+        setStartingPoint(prefilledData.startingPoint);
+      }
+      if (prefilledData.destination) {
+        setDestination(prefilledData.destination);
+      }
       setShowAIPreview(true);
     }
   }, [prefilledData]);
 
   const handleOrder = () => {
-    if (selectedService && description && deadline && budget) {
-      addOrder({
-        type: selectedService,
-        description,
-        deadline,
-        budget,
-      });
-      setSelectedService(null);
-      setDescription("");
-      setDeadline("");
-      setBudget("");
-      onClose();
+    if (isTaxi) {
+      if (selectedService && startingPoint && destination && budget) {
+        addOrder({
+          type: selectedService,
+          description: `${t.startingPoint}: ${startingPoint} → ${t.destination}: ${destination}`,
+          deadline: deadline || "",
+          budget,
+          startingPoint,
+          destination,
+        });
+        resetForm();
+        onClose();
+      }
+    } else {
+      if (selectedService && description && deadline && budget) {
+        addOrder({
+          type: selectedService,
+          description,
+          deadline,
+          budget,
+        });
+        resetForm();
+        onClose();
+      }
     }
+  };
+
+  const resetForm = () => {
+    setSelectedService(null);
+    setDescription("");
+    setDeadline("");
+    setBudget("");
+    setStartingPoint("");
+    setDestination("");
   };
 
   return (
@@ -133,43 +170,102 @@ export function OrderModal({ visible, onClose, prefilledData }: OrderModalProps)
             </View>
 
             <View style={styles.formSection}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t.description}</Text>
-                <TextInput
-                  style={[styles.input, styles.textArea, { borderColor: description ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
-                  value={description}
-                  onChangeText={setDescription}
-                  placeholder={t.enterDescription}
-                  placeholderTextColor={commonColors.textSecondary}
-                  multiline
-                  numberOfLines={4}
-                />
-              </View>
+              {isTaxi ? (
+                <>
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelRow}>
+                      <MapPin size={14} color="#10b981" />
+                      <Text style={styles.label}>{t.startingPoint}</Text>
+                    </View>
+                    <TextInput
+                      style={[styles.input, { borderColor: startingPoint ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
+                      value={startingPoint}
+                      onChangeText={setStartingPoint}
+                      placeholder={t.startingPoint}
+                      placeholderTextColor={commonColors.textSecondary}
+                    />
+                  </View>
 
-              <View style={styles.inputRow}>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.label}>{t.deadline}</Text>
-                  <TextInput
-                    style={[styles.input, { borderColor: deadline ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
-                    value={deadline}
-                    onChangeText={setDeadline}
-                    placeholder={t.selectDeadline}
-                    placeholderTextColor={commonColors.textSecondary}
-                  />
-                </View>
+                  <View style={styles.inputGroup}>
+                    <View style={styles.labelRow}>
+                      <MapPin size={14} color="#ef4444" />
+                      <Text style={styles.label}>{t.destination}</Text>
+                    </View>
+                    <TextInput
+                      style={[styles.input, { borderColor: destination ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
+                      value={destination}
+                      onChangeText={setDestination}
+                      placeholder={t.destination}
+                      placeholderTextColor={commonColors.textSecondary}
+                    />
+                  </View>
 
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.label}>{t.budget} (KZT)</Text>
-                  <TextInput
-                    style={[styles.input, { borderColor: budget ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
-                    value={budget}
-                    onChangeText={setBudget}
-                    placeholder={t.enterBudget}
-                    placeholderTextColor={commonColors.textSecondary}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
+                  <View style={styles.inputRow}>
+                    <View style={[styles.inputGroup, { flex: 1 }]}>
+                      <Text style={styles.label}>{t.time}</Text>
+                      <TextInput
+                        style={[styles.input, { borderColor: deadline ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
+                        value={deadline}
+                        onChangeText={setDeadline}
+                        placeholder={t.time}
+                        placeholderTextColor={commonColors.textSecondary}
+                      />
+                    </View>
+
+                    <View style={[styles.inputGroup, { flex: 1 }]}>
+                      <Text style={styles.label}>{t.budget} (KZT)</Text>
+                      <TextInput
+                        style={[styles.input, { borderColor: budget ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
+                        value={budget}
+                        onChangeText={setBudget}
+                        placeholder={t.enterBudget}
+                        placeholderTextColor={commonColors.textSecondary}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>{t.description}</Text>
+                    <TextInput
+                      style={[styles.input, styles.textArea, { borderColor: description ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
+                      value={description}
+                      onChangeText={setDescription}
+                      placeholder={t.enterDescription}
+                      placeholderTextColor={commonColors.textSecondary}
+                      multiline
+                      numberOfLines={4}
+                    />
+                  </View>
+
+                  <View style={styles.inputRow}>
+                    <View style={[styles.inputGroup, { flex: 1 }]}>
+                      <Text style={styles.label}>{t.deadline}</Text>
+                      <TextInput
+                        style={[styles.input, { borderColor: deadline ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
+                        value={deadline}
+                        onChangeText={setDeadline}
+                        placeholder={t.selectDeadline}
+                        placeholderTextColor={commonColors.textSecondary}
+                      />
+                    </View>
+
+                    <View style={[styles.inputGroup, { flex: 1 }]}>
+                      <Text style={styles.label}>{t.budget} (KZT)</Text>
+                      <TextInput
+                        style={[styles.input, { borderColor: budget ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
+                        value={budget}
+                        onChangeText={setBudget}
+                        placeholder={t.enterBudget}
+                        placeholderTextColor={commonColors.textSecondary}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  </View>
+                </>
+              )}
             </View>
 
             <View style={styles.actions}>
@@ -400,5 +496,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "400" as const,
     color: commonColors.textSecondary,
+  },
+  labelRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
   },
 });

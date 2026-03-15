@@ -221,7 +221,7 @@ export default function MainScreen() {
       }
     };
 
-    getLocation();
+    void getLocation();
   }, []);
 
 
@@ -261,6 +261,46 @@ export default function MainScreen() {
           {renderContent()}
         </View>
       )}
+
+      <Animated.View
+        style={[
+          styles.floatingButton,
+          {
+            transform: [
+              { translateX: floatingPos.x },
+              { translateY: floatingPos.y },
+              { scale: floatingScale },
+            ],
+          },
+        ]}
+        {...panResponder.panHandlers}
+        testID="ai-floating-button"
+      >
+        <Image
+          source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/s00togqz2vrsgw7gzi3og' }}
+          style={styles.floatingButtonImage}
+        />
+        <View style={styles.floatingButtonOverlay}>
+          <Text style={styles.floatingButtonText}>AI</Text>
+        </View>
+      </Animated.View>
+
+      <AIAssistantModal
+        visible={aiAssistantOpen}
+        onClose={() => setAiAssistantOpen(false)}
+        onAction={(action: AIAction) => {
+          if (action.type === "order" && action.data) {
+            setAiOrderData(action.data);
+            setActiveModal("order");
+          } else if (
+            action.type === "navigate" &&
+            (action.data?.screen === "services" || action.data?.screen === "work")
+          ) {
+            setActiveMode(action.data.screen);
+            setAiAssistantOpen(false);
+          }
+        }}
+      />
     </View>
   );
 
@@ -738,23 +778,7 @@ export default function MainScreen() {
         <SettingsModal visible={settingsOpen} onClose={() => setSettingsOpen(false)} />
         <CalendarModal visible={calendarOpen} onClose={() => setCalendarOpen(false)} />
         <NotificationsModal visible={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
-        <AIAssistantModal
-          visible={aiAssistantOpen}
-          onClose={() => setAiAssistantOpen(false)}
-          onAction={(action: AIAction) => {
-            if (action.type === "order" && action.data) {
-              setAiOrderData(action.data);
-              setActiveModal("order");
-              setAiAssistantOpen(false);
-            } else if (
-              action.type === "navigate" &&
-              (action.data?.screen === "services" || action.data?.screen === "work")
-            ) {
-              setActiveMode(action.data.screen);
-              setAiAssistantOpen(false);
-            }
-          }}
-        />
+
 
         {activeModal === "order" && (
           <OrderModal
@@ -796,29 +820,6 @@ export default function MainScreen() {
           visible={dailyCheckinOpen} 
           onClose={() => setDailyCheckinOpen(false)} 
         />
-
-        <Animated.View
-          style={[
-            styles.floatingButton,
-            {
-              transform: [
-                { translateX: floatingPos.x },
-                { translateY: floatingPos.y },
-                { scale: floatingScale },
-              ],
-            },
-          ]}
-          {...panResponder.panHandlers}
-          testID="ai-floating-button"
-        >
-          <Image
-            source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/s00togqz2vrsgw7gzi3og' }}
-            style={styles.floatingButtonImage}
-          />
-          <View style={styles.floatingButtonOverlay}>
-            <Text style={styles.floatingButtonText}>AI</Text>
-          </View>
-        </Animated.View>
 
       </>
     );

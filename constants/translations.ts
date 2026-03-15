@@ -247,6 +247,18 @@ export interface Translations {
   youAreHere: string;
   coordinates: string;
   viewMap: string;
+  taxiFrom: string;
+  taxiTo: string;
+  taxiTime: string;
+  taxiBudget: string;
+  taxiOrderCard: string;
+  taxiConfirmOrder: string;
+  taxiOrderCreated: string;
+  taxiWhereFrom: string;
+  taxiWhereTo: string;
+  taxiWhenTime: string;
+  taxiWhatBudget: string;
+  taxiConfirmYes: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -475,6 +487,18 @@ export const translations: Record<Language, Translations> = {
     youAreHere: "Вы здесь",
     coordinates: "Координаты",
     viewMap: "Открыть карту",
+    taxiFrom: "Откуда",
+    taxiTo: "Куда",
+    taxiTime: "Время",
+    taxiBudget: "Бюджет",
+    taxiOrderCard: "Карточка заказа такси",
+    taxiConfirmOrder: "Заказ оформить?",
+    taxiOrderCreated: "Заказ такси создан и добавлен в ленту \"Найти заказы\"!",
+    taxiWhereFrom: "Откуда вас забрать?",
+    taxiWhereTo: "Куда едем?",
+    taxiWhenTime: "На какое время?",
+    taxiWhatBudget: "Какой бюджет (в тенге)?",
+    taxiConfirmYes: "Скажите \"Да\" голосом или напишите для подтверждения.",
     
     backgroundOverlay: "Эффект фона",
     darker: "Темнее",
@@ -723,6 +747,18 @@ export const translations: Record<Language, Translations> = {
     youAreHere: "You are here",
     coordinates: "Coordinates",
     viewMap: "View Map",
+    taxiFrom: "From",
+    taxiTo: "To",
+    taxiTime: "Time",
+    taxiBudget: "Budget",
+    taxiOrderCard: "Taxi order card",
+    taxiConfirmOrder: "Confirm order?",
+    taxiOrderCreated: "Taxi order created and added to \"Find Orders\" feed!",
+    taxiWhereFrom: "Where should we pick you up?",
+    taxiWhereTo: "Where are you going?",
+    taxiWhenTime: "What time?",
+    taxiWhatBudget: "What's your budget (in tenge)?",
+    taxiConfirmYes: "Say \"Yes\" by voice or type to confirm.",
     
     backgroundOverlay: "Background Overlay",
     darker: "Darker",
@@ -971,6 +1007,18 @@ export const translations: Record<Language, Translations> = {
     youAreHere: "Сіз осындасыз",
     coordinates: "Координаттар",
     viewMap: "Картаны ашу",
+    taxiFrom: "Қайдан",
+    taxiTo: "Қайда",
+    taxiTime: "Уақыт",
+    taxiBudget: "Бюджет",
+    taxiOrderCard: "Такси тапсырыс картасы",
+    taxiConfirmOrder: "Тапсырысты рәсімдеу керек пе?",
+    taxiOrderCreated: "Такси тапсырысы жасалды және \"Тапсырыстарды табу\" лентасына қосылды!",
+    taxiWhereFrom: "Сізді қайдан алу керек?",
+    taxiWhereTo: "Қайда барасыз?",
+    taxiWhenTime: "Қай уақытта?",
+    taxiWhatBudget: "Бюджетіңіз қанша (теңгемен)?",
+    taxiConfirmYes: "Растау үшін дауыспен \"Иә\" деңіз немесе жазыңыз.",
     
     backgroundOverlay: "Фон эффекті",
     darker: "Қараңғырақ",

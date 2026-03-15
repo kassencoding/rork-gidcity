@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   TextInput,
   FlatList,
 } from "react-native";
-import { Mic, Loader, StopCircle, Send, X } from "lucide-react-native";
+import { Mic, Loader, StopCircle, Send, X, Car, MapPin, Clock, DollarSign, CheckCircle } from "lucide-react-native";
 import { Audio } from "expo-av";
 import { GlassModal } from "../GlassModal";
 import { useAppState } from "@/contexts/AppStateContext";
@@ -24,7 +24,7 @@ interface AIAssistantModalProps {
 }
 
 export interface AIAction {
-  type: "order" | "reminder" | "navigate" | "unknown";
+  type: "order" | "reminder" | "navigate" | "taxi_order_created" | "unknown";
   data?: any;
   preview?: string;
 }
@@ -34,10 +34,21 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+  taxiCard?: TaxiOrderData;
+  isOrderCreated?: boolean;
 }
 
+interface TaxiOrderData {
+  from: string;
+  to: string;
+  time: string;
+  budget: string;
+}
+
+type TaxiFlowStep = "idle" | "ask_from" | "ask_to" | "ask_time" | "ask_budget" | "confirm" | "done";
+
 export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModalProps) {
-  const { currentTheme, t } = useAppState();
+  const { currentTheme, t, addOrder } = useAppState();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
@@ -50,6 +61,10 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
       timestamp: Date.now(),
     },
   ]);
+
+  const [taxiFlowStep, setTaxiFlowStep] = useState<TaxiFlowStep>("idle");
+  const [taxiData, setTaxiData] = useState<TaxiOrderData>({ from: "", to: "", time: "", budget: "" });
+
   const recording = useRef<Audio.Recording | null>(null);
   const waveAnim = useRef(new Animated.Value(0)).current;
   const mediaRecorder = useRef<MediaRecorder | null>(null);
@@ -78,6 +93,132 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
     waveAnim.stopAnimation();
     waveAnim.setValue(0);
   };
+
+  const addAssistantMessage = useCallback((content: string, extra?: Partial<Message>) => {
+    const msg: Message = {
+      id: (Date.now() + Math.random()).toString(),
+      role: "assistant",
+      content,
+      timestamp: Date.now(),
+      ...extra,
+    };
+    setMessages((prev) => [...prev, msg]);
+    return msg;
+  }, []);
+
+  const addUserMessage = useCallback((content: string) => {
+    const msg: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content,
+      timestamp: Date.now(),
+    };
+    setMessages((prev) => [...prev, msg]);
+    return msg;
+  }, []);
+
+  const isTaxiIntent = useCallback((text: string): boolean => {
+    const lower = text.toLowerCase();
+    const taxiKeywords = [
+      "такси", "taxi", "таксі",
+      "закажи такси", "вызови такси", "нужно такси",
+      "заказать такси", "хочу такси", "мне такси",
+      "order taxi", "book taxi", "need a taxi", "call a taxi",
+    ];
+    return taxiKeywords.some((kw) => lower.includes(kw));
+  }, []);
+
+  const isConfirmation = useCallback((text: string): boolean => {
+    const lower = text.toLowerCase().trim();
+    const yesWords = ["да", "yes", "ия", "иә", "конечно", "подтверждаю", "ок", "ok", "давай", "оформляй", "заказывай", "sure", "yep", "yeah"];
+    return yesWords.some((w) => lower === w || lower.startsWith(w + " ") || lower.startsWith(w + ",") || lower.startsWith(w + "."));
+  }, []);
+
+  const handleTaxiFlow = useCallback((userText: string) => {
+    console.log("Taxi flow step:", taxiFlowStep, "user:", userText);
+
+    if (taxiFlowStep === "idle" || taxiFlowStep === "done") {
+      setTaxiData({ from: "", to: "", time: "", budget: "" });
+      addUserMessage(userText);
+      addAssistantMessage(`🚖 ${t.taxiWhereFrom}`);
+      setTaxiFlowStep("ask_from");
+      return true;
+    }
+
+    if (taxiFlowStep === "ask_from") {
+      addUserMessage(userText);
+      setTaxiData((prev) => ({ ...prev, from: userText }));
+      addAssistantMessage(`📍 ${t.taxiWhereTo}`);
+      setTaxiFlowStep("ask_to");
+      return true;
+    }
+
+    if (taxiFlowStep === "ask_to") {
+      addUserMessage(userText);
+      setTaxiData((prev) => ({ ...prev, to: userText }));
+      addAssistantMessage(`🕐 ${t.taxiWhenTime}`);
+      setTaxiFlowStep("ask_time");
+      return true;
+    }
+
+    if (taxiFlowStep === "ask_time") {
+      addUserMessage(userText);
+      setTaxiData((prev) => ({ ...prev, time: userText }));
+      addAssistantMessage(`💰 ${t.taxiWhatBudget}`);
+      setTaxiFlowStep("ask_budget");
+      return true;
+    }
+
+    if (taxiFlowStep === "ask_budget") {
+      addUserMessage(userText);
+      const finalData: TaxiOrderData = { ...taxiData, budget: userText };
+      setTaxiData(finalData);
+
+      addAssistantMessage(
+        `${t.taxiConfirmOrder}\n\n${t.taxiConfirmYes}`,
+        { taxiCard: finalData }
+      );
+      setTaxiFlowStep("confirm");
+      return true;
+    }
+
+    if (taxiFlowStep === "confirm") {
+      addUserMessage(userText);
+      if (isConfirmation(userText)) {
+        const finalData = { ...taxiData };
+        if (!finalData.budget && userText) {
+          finalData.budget = userText;
+        }
+
+        addOrder({
+          type: t.taxi,
+          description: `${t.taxiFrom}: ${finalData.from} → ${t.taxiTo}: ${finalData.to}`,
+          deadline: finalData.time,
+          budget: finalData.budget,
+          startingPoint: finalData.from,
+          destination: finalData.to,
+        });
+
+        console.log("Taxi order created:", finalData);
+
+        addAssistantMessage(
+          `✅ ${t.taxiOrderCreated}`,
+          { isOrderCreated: true }
+        );
+
+        onAction({ type: "taxi_order_created", data: finalData });
+        setTaxiFlowStep("done");
+        setTaxiData({ from: "", to: "", time: "", budget: "" });
+      } else {
+        addAssistantMessage("Заказ отменён. Если хотите заказать такси снова, просто скажите!");
+        setTaxiFlowStep("idle");
+        setTaxiData({ from: "", to: "", time: "", budget: "" });
+      }
+      return true;
+    }
+
+    return false;
+  }, [taxiFlowStep, taxiData, t, addOrder, addUserMessage, addAssistantMessage, isConfirmation, onAction]);
 
   const startRecordingMobile = async () => {
     try {
@@ -125,8 +266,8 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
       setIsRecording(true);
       startWaveAnimation();
       console.log("Mobile recording started");
-    } catch (error) {
-      console.error("Failed to start mobile recording:", error);
+    } catch (err) {
+      console.error("Failed to start mobile recording:", err);
       setError(t.recordingFailed);
     }
   };
@@ -156,8 +297,8 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
       setIsRecording(true);
       startWaveAnimation();
       console.log("Web recording started");
-    } catch (error) {
-      console.error("Failed to start web recording:", error);
+    } catch (err) {
+      console.error("Failed to start web recording:", err);
       setError(t.recordingFailed);
     }
   };
@@ -197,8 +338,8 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
       });
-    } catch (error) {
-      console.error("Failed to stop mobile recording:", error);
+    } catch (err) {
+      console.error("Failed to stop mobile recording:", err);
       setError(t.recordingFailed);
     }
   };
@@ -253,8 +394,8 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
       const data = await response.json();
       console.log("Transcription result:", data);
       await handleSendMessage(data.text);
-    } catch (error) {
-      console.error("Transcription error:", error);
+    } catch (err) {
+      console.error("Transcription error:", err);
       setError(t.transcriptionFailed);
       setIsProcessing(false);
     }
@@ -266,6 +407,16 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
 
     setMessageInput("");
     setError("");
+
+    if (taxiFlowStep !== "idle" && taxiFlowStep !== "done") {
+      handleTaxiFlow(userMessage);
+      return;
+    }
+
+    if (isTaxiIntent(userMessage)) {
+      handleTaxiFlow(userMessage);
+      return;
+    }
 
     const newUserMessage: Message = {
       id: Date.now().toString(),
@@ -283,7 +434,7 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
         content: msg.content,
       }));
 
-      const systemPrompt = `You are Aria, an AI assistant for GiDCity app. Respond helpfully to: "${userMessage}". If it's an order/service request, confirm you understand. If it's a reminder, acknowledge it. Be friendly and conversational in the same language as the user. Keep responses brief and natural.`;
+      const systemPrompt = `You are Aria, an AI assistant for GiDCity app. Respond helpfully to: "${userMessage}". If the user asks for taxi, tell them you can help order a taxi. If it's an order/service request, confirm you understand. If it's a reminder, acknowledge it. Be friendly and conversational in the same language as the user. Keep responses brief and natural.`;
 
       const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
       
@@ -334,9 +485,9 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
       setMessages((prev) => [...prev, aiMessage]);
 
       await checkForActions(userMessage);
-    } catch (error: any) {
-      console.error("AI chat error:", error);
-      const errorMessage = error?.message || "Произошла ошибка при обработке вашего сообщения.";
+    } catch (err: any) {
+      console.error("AI chat error:", err);
+      const errorMessage = err?.message || "Произошла ошибка при обработке вашего сообщения.";
       setError(errorMessage);
       
       const errorAiMessage: Message = {
@@ -408,8 +559,8 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
           });
         }
       }
-    } catch (error) {
-      console.error("Error checking actions:", error);
+    } catch (err) {
+      console.error("Error checking actions:", err);
     }
   };
 
@@ -417,6 +568,35 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
     inputRange: [0, 1],
     outputRange: [1, 1.3],
   });
+
+  const renderTaxiCard = (data: TaxiOrderData) => (
+    <View style={styles.taxiCard}>
+      <View style={styles.taxiCardHeader}>
+        <Car size={18} color="#fbbf24" />
+        <Text style={styles.taxiCardTitle}>{t.taxiOrderCard}</Text>
+      </View>
+      <View style={styles.taxiCardRow}>
+        <MapPin size={14} color="#10b981" />
+        <Text style={styles.taxiCardLabel}>{t.taxiFrom}:</Text>
+        <Text style={styles.taxiCardValue}>{data.from}</Text>
+      </View>
+      <View style={styles.taxiCardRow}>
+        <MapPin size={14} color="#ef4444" />
+        <Text style={styles.taxiCardLabel}>{t.taxiTo}:</Text>
+        <Text style={styles.taxiCardValue}>{data.to}</Text>
+      </View>
+      <View style={styles.taxiCardRow}>
+        <Clock size={14} color="#60a5fa" />
+        <Text style={styles.taxiCardLabel}>{t.taxiTime}:</Text>
+        <Text style={styles.taxiCardValue}>{data.time}</Text>
+      </View>
+      <View style={styles.taxiCardRow}>
+        <DollarSign size={14} color="#fbbf24" />
+        <Text style={styles.taxiCardLabel}>{t.taxiBudget}:</Text>
+        <Text style={styles.taxiCardValue}>{data.budget} ₸</Text>
+      </View>
+    </View>
+  );
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isUser = item.role === "user";
@@ -428,7 +608,16 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
           </View>
         )}
         <View style={[styles.messageBubble, isUser ? [styles.userBubble, { backgroundColor: currentTheme.accent }] : styles.aiBubble]}>
-          <Text style={[styles.messageText, isUser && styles.userMessageText]}>{item.content}</Text>
+          {item.taxiCard && renderTaxiCard(item.taxiCard)}
+          {item.isOrderCreated && (
+            <View style={styles.orderCreatedBadge}>
+              <CheckCircle size={16} color="#10b981" />
+              <Text style={styles.orderCreatedText}>{t.taxiOrderCreated}</Text>
+            </View>
+          )}
+          {!item.isOrderCreated && (
+            <Text style={[styles.messageText, isUser && styles.userMessageText]}>{item.content}</Text>
+          )}
         </View>
       </View>
     );
@@ -447,7 +636,7 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
                   {t.aiAssistant} Aria
                 </Text>
                 <Text style={styles.headerSubtitle}>
-                  {isProcessing ? t.recording || "Печатает..." : "В сети"}
+                  {isProcessing ? t.recording || "Печатает..." : taxiFlowStep !== "idle" && taxiFlowStep !== "done" ? "🚖 Оформление такси..." : "В сети"}
                 </Text>
               </View>
             </View>
@@ -478,7 +667,14 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
                   style={styles.textInput}
                   value={messageInput}
                   onChangeText={setMessageInput}
-                  placeholder={t.typeCommand || "Введите сообщение..."}
+                  placeholder={
+                    taxiFlowStep === "ask_from" ? t.taxiWhereFrom :
+                    taxiFlowStep === "ask_to" ? t.taxiWhereTo :
+                    taxiFlowStep === "ask_time" ? t.taxiWhenTime :
+                    taxiFlowStep === "ask_budget" ? t.taxiWhatBudget :
+                    taxiFlowStep === "confirm" ? t.taxiConfirmYes :
+                    t.typeCommand || "Введите сообщение..."
+                  }
                   placeholderTextColor="rgba(255,255,255,0.4)"
                   multiline
                   maxLength={500}
@@ -536,20 +732,20 @@ export function AIAssistantModal({ visible, onClose, onAction }: AIAssistantModa
 
 const styles = StyleSheet.create({
   container: {
-    height: '100%',
+    height: '100%' as any,
     maxHeight: 600,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255,255,255,0.1)",
   },
   headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: 12,
   },
   headerAvatar: {
@@ -572,8 +768,8 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     backgroundColor: "rgba(20, 20, 30, 0.7)",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   messagesContainer: {
     padding: 16,
@@ -581,15 +777,15 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   messageContainer: {
-    flexDirection: "row",
+    flexDirection: "row" as const,
     marginBottom: 16,
     gap: 8,
   },
   userMessageContainer: {
-    justifyContent: "flex-end",
+    justifyContent: "flex-end" as const,
   },
   aiMessageContainer: {
-    justifyContent: "flex-start",
+    justifyContent: "flex-start" as const,
   },
   aiAvatar: {
     width: 32,
@@ -617,6 +813,55 @@ const styles = StyleSheet.create({
   userMessageText: {
     color: "#ffffff",
   },
+  taxiCard: {
+    backgroundColor: "rgba(251, 191, 36, 0.1)",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "rgba(251, 191, 36, 0.3)",
+    gap: 8,
+  },
+  taxiCardHeader: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+    marginBottom: 4,
+  },
+  taxiCardTitle: {
+    fontSize: 13,
+    fontWeight: "700" as const,
+    color: "#fbbf24",
+  },
+  taxiCardRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+  },
+  taxiCardLabel: {
+    fontSize: 12,
+    fontWeight: "600" as const,
+    color: "rgba(255,255,255,0.6)",
+    minWidth: 55,
+  },
+  taxiCardValue: {
+    fontSize: 13,
+    fontWeight: "500" as const,
+    color: "#ffffff",
+    flex: 1,
+  },
+  orderCreatedBadge: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+    paddingVertical: 4,
+  },
+  orderCreatedText: {
+    fontSize: 13,
+    fontWeight: "600" as const,
+    color: "#10b981",
+    flex: 1,
+  },
   errorBanner: {
     backgroundColor: "rgba(239, 68, 68, 0.15)",
     paddingVertical: 8,
@@ -628,7 +873,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 11,
     color: "#ef4444",
-    textAlign: "center",
+    textAlign: "center" as const,
   },
   inputArea: {
     paddingTop: 12,
@@ -636,8 +881,8 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(255,255,255,0.1)",
   },
   textInputContainer: {
-    flexDirection: "row",
-    alignItems: "flex-end",
+    flexDirection: "row" as const,
+    alignItems: "flex-end" as const,
     gap: 8,
     paddingHorizontal: 16,
     paddingBottom: 8,
@@ -659,19 +904,19 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: "rgba(30, 30, 45, 0.8)",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   sendButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   recordingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -681,8 +926,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   recordingIndicator: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   recordingDot: {
     width: 12,
@@ -699,7 +944,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 });

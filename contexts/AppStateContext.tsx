@@ -31,6 +31,8 @@ export interface Order {
   customerId: string;
   customerName: string;
   customerAvatar?: string;
+  startingPoint?: string;
+  destination?: string;
 }
 
 export interface Proposal {
@@ -400,13 +402,13 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
   }, []);
 
   useEffect(() => {
-    loadState();
+    void loadState();
   }, [loadState]);
 
   useEffect(() => {
     if (isLoaded) {
       const timeoutId = setTimeout(() => {
-        saveState(state);
+        void saveState(state);
       }, 500);
       return () => clearTimeout(timeoutId);
     }
