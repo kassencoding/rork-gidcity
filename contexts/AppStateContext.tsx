@@ -361,32 +361,53 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
       const stored = await AsyncStorage.getItem("gidcity_state");
       if (stored) {
         try {
-          if (stored.trim().length === 0) {
-            setState(DEFAULT_STATE);
-            setIsLoaded(true);
-            return;
-          }
-
-          if (!stored.startsWith('{')) {
+          if (!stored || stored.trim().length === 0 || !stored.trim().startsWith('{')) {
+            console.log("Invalid stored state format, using defaults");
+            await AsyncStorage.removeItem("gidcity_state");
             setState(DEFAULT_STATE);
             setIsLoaded(true);
             return;
           }
 
           const parsed = JSON.parse(stored);
-          if (parsed && typeof parsed === 'object') {
-            setState({ ...DEFAULT_STATE, ...parsed });
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            const validCity = parsed.city && typeof parsed.city === 'object' && parsed.city.name
+              ? parsed.city
+              : DEFAULT_STATE.city;
+            const validProfile = parsed.profile && typeof parsed.profile === 'object' && parsed.profile.name
+              ? parsed.profile
+              : DEFAULT_STATE.profile;
+            const merged = {
+              ...DEFAULT_STATE,
+              ...parsed,
+              city: validCity,
+              profile: validProfile,
+              orders: Array.isArray(parsed.orders) ? parsed.orders : DEFAULT_STATE.orders,
+              reminders: Array.isArray(parsed.reminders) ? parsed.reminders : DEFAULT_STATE.reminders,
+              chatPosts: Array.isArray(parsed.chatPosts) ? parsed.chatPosts : DEFAULT_STATE.chatPosts,
+              proposals: Array.isArray(parsed.proposals) ? parsed.proposals : DEFAULT_STATE.proposals,
+              chats: Array.isArray(parsed.chats) ? parsed.chats : DEFAULT_STATE.chats,
+              bookings: Array.isArray(parsed.bookings) ? parsed.bookings : DEFAULT_STATE.bookings,
+              listings: Array.isArray(parsed.listings) ? parsed.listings : DEFAULT_STATE.listings,
+              transactions: Array.isArray(parsed.transactions) ? parsed.transactions : DEFAULT_STATE.transactions,
+            };
+            console.log("State loaded successfully");
+            setState(merged);
           } else {
+            console.log("Parsed state is not a valid object, using defaults");
+            await AsyncStorage.removeItem("gidcity_state");
             setState(DEFAULT_STATE);
           }
         } catch (parseError) {
-          console.log("JSON parse error:", parseError);
+          console.log("JSON parse error, clearing corrupted state:", parseError);
+          await AsyncStorage.removeItem("gidcity_state");
           setState(DEFAULT_STATE);
         }
       }
       setIsLoaded(true);
     } catch (error) {
       console.log("Error loading state:", error);
+      setState(DEFAULT_STATE);
       setIsLoaded(true);
     }
   }, []);
@@ -400,13 +421,13 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
   }, []);
 
   useEffect(() => {
-    loadState();
+    void loadState();
   }, [loadState]);
 
   useEffect(() => {
     if (isLoaded) {
       const timeoutId = setTimeout(() => {
-        saveState(state);
+        void saveState(state);
       }, 500);
       return () => clearTimeout(timeoutId);
     }
