@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from "react-native";
-import { Home, Car, Package, Wrench, Sparkles } from "lucide-react-native";
+import { Home, Car, Package, Wrench, Sparkles, MapPin, Clock } from "lucide-react-native";
 import { GlassModal } from "../GlassModal";
 import { GlassButton } from "../GlassButton";
 import { useAppState } from "@/contexts/AppStateContext";
@@ -14,10 +14,11 @@ interface OrderModalProps {
     description?: string;
     deadline?: string;
     budget?: string;
+    fromLocation?: string;
+    toLocation?: string;
+    time?: string;
   } | null;
 }
-
-
 
 export function OrderModal({ visible, onClose, prefilledData }: OrderModalProps) {
   const { currentTheme, addOrder, t } = useAppState();
@@ -33,7 +34,12 @@ export function OrderModal({ visible, onClose, prefilledData }: OrderModalProps)
   const [description, setDescription] = useState("");
   const [deadline, setDeadline] = useState("");
   const [budget, setBudget] = useState("");
+  const [fromLocation, setFromLocation] = useState("");
+  const [toLocation, setToLocation] = useState("");
+  const [orderTime, setOrderTime] = useState("");
   const [showAIPreview, setShowAIPreview] = useState(false);
+
+  const isTaxi = selectedService === t.taxi || selectedService === "Такси" || selectedService === "Taxi" || selectedService === "Такси";
 
   useEffect(() => {
     if (prefilledData) {
@@ -49,25 +55,151 @@ export function OrderModal({ visible, onClose, prefilledData }: OrderModalProps)
       if (prefilledData.budget) {
         setBudget(prefilledData.budget);
       }
+      if (prefilledData.fromLocation) {
+        setFromLocation(prefilledData.fromLocation);
+      }
+      if (prefilledData.toLocation) {
+        setToLocation(prefilledData.toLocation);
+      }
+      if (prefilledData.time) {
+        setOrderTime(prefilledData.time);
+      }
       setShowAIPreview(true);
     }
   }, [prefilledData]);
 
   const handleOrder = () => {
-    if (selectedService && description && deadline && budget) {
+    if (!selectedService) return;
+
+    if (isTaxi) {
+      if (!fromLocation || !toLocation || !budget) return;
+      addOrder({
+        type: selectedService,
+        description: `${t.fromWhere}: ${fromLocation} → ${t.toWhere}: ${toLocation}`,
+        deadline: orderTime || "",
+        budget,
+      });
+    } else {
+      if (!description || !deadline || !budget) return;
       addOrder({
         type: selectedService,
         description,
         deadline,
         budget,
       });
-      setSelectedService(null);
-      setDescription("");
-      setDeadline("");
-      setBudget("");
-      onClose();
     }
+
+    setSelectedService(null);
+    setDescription("");
+    setDeadline("");
+    setBudget("");
+    setFromLocation("");
+    setToLocation("");
+    setOrderTime("");
+    onClose();
   };
+
+  const renderTaxiForm = () => (
+    <View style={styles.formSection}>
+      <View style={styles.inputGroup}>
+        <View style={styles.labelRow}>
+          <MapPin size={14} color="#fbbf24" />
+          <Text style={styles.label}>{t.fromWhere}</Text>
+        </View>
+        <TextInput
+          style={[styles.input, { borderColor: fromLocation ? "#fbbf24" + "60" : "rgba(255, 255, 255, 0.08)" }]}
+          value={fromLocation}
+          onChangeText={setFromLocation}
+          placeholder={t.taxiFrom}
+          placeholderTextColor={commonColors.textSecondary}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <View style={styles.labelRow}>
+          <MapPin size={14} color="#ef4444" />
+          <Text style={styles.label}>{t.toWhere}</Text>
+        </View>
+        <TextInput
+          style={[styles.input, { borderColor: toLocation ? "#ef4444" + "60" : "rgba(255, 255, 255, 0.08)" }]}
+          value={toLocation}
+          onChangeText={setToLocation}
+          placeholder={t.taxiTo}
+          placeholderTextColor={commonColors.textSecondary}
+        />
+      </View>
+
+      <View style={styles.inputRow}>
+        <View style={[styles.inputGroup, { flex: 1 }]}>
+          <View style={styles.labelRow}>
+            <Clock size={14} color="#60a5fa" />
+            <Text style={styles.label}>{t.orderTime}</Text>
+          </View>
+          <TextInput
+            style={[styles.input, { borderColor: orderTime ? "#60a5fa" + "60" : "rgba(255, 255, 255, 0.08)" }]}
+            value={orderTime}
+            onChangeText={setOrderTime}
+            placeholder={t.time}
+            placeholderTextColor={commonColors.textSecondary}
+          />
+        </View>
+
+        <View style={[styles.inputGroup, { flex: 1 }]}>
+          <Text style={styles.label}>{t.budget} (KZT)</Text>
+          <TextInput
+            style={[styles.input, { borderColor: budget ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
+            value={budget}
+            onChangeText={setBudget}
+            placeholder={t.enterBudget}
+            placeholderTextColor={commonColors.textSecondary}
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderDefaultForm = () => (
+    <View style={styles.formSection}>
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>{t.description}</Text>
+        <TextInput
+          style={[styles.input, styles.textArea, { borderColor: description ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
+          value={description}
+          onChangeText={setDescription}
+          placeholder={t.enterDescription}
+          placeholderTextColor={commonColors.textSecondary}
+          multiline
+          numberOfLines={4}
+        />
+      </View>
+
+      <View style={styles.inputRow}>
+        <View style={[styles.inputGroup, { flex: 1 }]}>
+          <Text style={styles.label}>{t.deadline}</Text>
+          <TextInput
+            style={[styles.input, { borderColor: deadline ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
+            value={deadline}
+            onChangeText={setDeadline}
+            placeholder={t.selectDeadline}
+            placeholderTextColor={commonColors.textSecondary}
+          />
+        </View>
+
+        <View style={[styles.inputGroup, { flex: 1 }]}>
+          <Text style={styles.label}>{t.budget} (KZT)</Text>
+          <TextInput
+            style={[styles.input, { borderColor: budget ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
+            value={budget}
+            onChangeText={setBudget}
+            placeholder={t.enterBudget}
+            placeholderTextColor={commonColors.textSecondary}
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+    </View>
+  );
 
   return (
     <GlassModal visible={visible} onClose={onClose}>
@@ -113,17 +245,21 @@ export function OrderModal({ visible, onClose, prefilledData }: OrderModalProps)
             {showAIPreview && (
               <View style={[styles.aiPreviewBanner, { backgroundColor: currentTheme.accent + "20", borderColor: currentTheme.accent }]}>
                 <Sparkles size={16} color={currentTheme.accent} strokeWidth={2.5} />
-                <Text style={[styles.aiPreviewText, { color: currentTheme.accent }]}>Заполнено GiD Ассистентом</Text>
+                <Text style={[styles.aiPreviewText, { color: currentTheme.accent }]}>{t.orderCreatedByAI}</Text>
               </View>
             )}
             
             <View style={[styles.selectedServiceCard, { borderColor: currentTheme.accent + "40" }]}>
-              <View style={[styles.selectedServiceIcon, { backgroundColor: currentTheme.accent + "20" }]}>
-                <Sparkles size={20} color={currentTheme.accent} strokeWidth={2.5} />
+              <View style={[styles.selectedServiceIcon, { backgroundColor: isTaxi ? "rgba(251, 191, 36, 0.2)" : currentTheme.accent + "20" }]}>
+                {isTaxi ? (
+                  <Car size={20} color="#fbbf24" strokeWidth={2.5} />
+                ) : (
+                  <Sparkles size={20} color={currentTheme.accent} strokeWidth={2.5} />
+                )}
               </View>
               <View style={styles.selectedServiceInfo}>
                 <Text style={styles.selectedServiceLabel}>{t.service}</Text>
-                <Text style={[styles.selectedServiceText, { color: currentTheme.accent }]}>
+                <Text style={[styles.selectedServiceText, { color: isTaxi ? "#fbbf24" : currentTheme.accent }]}>
                   {selectedService}
                 </Text>
               </View>
@@ -132,52 +268,14 @@ export function OrderModal({ visible, onClose, prefilledData }: OrderModalProps)
               </TouchableOpacity>
             </View>
 
-            <View style={styles.formSection}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t.description}</Text>
-                <TextInput
-                  style={[styles.input, styles.textArea, { borderColor: description ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
-                  value={description}
-                  onChangeText={setDescription}
-                  placeholder={t.enterDescription}
-                  placeholderTextColor={commonColors.textSecondary}
-                  multiline
-                  numberOfLines={4}
-                />
-              </View>
-
-              <View style={styles.inputRow}>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.label}>{t.deadline}</Text>
-                  <TextInput
-                    style={[styles.input, { borderColor: deadline ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
-                    value={deadline}
-                    onChangeText={setDeadline}
-                    placeholder={t.selectDeadline}
-                    placeholderTextColor={commonColors.textSecondary}
-                  />
-                </View>
-
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.label}>{t.budget} (KZT)</Text>
-                  <TextInput
-                    style={[styles.input, { borderColor: budget ? currentTheme.accent + "40" : "rgba(255, 255, 255, 0.08)" }]}
-                    value={budget}
-                    onChangeText={setBudget}
-                    placeholder={t.enterBudget}
-                    placeholderTextColor={commonColors.textSecondary}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
-            </View>
+            {isTaxi ? renderTaxiForm() : renderDefaultForm()}
 
             <View style={styles.actions}>
               <GlassButton
                 title={showAIPreview ? t.submit : t.order}
                 onPress={handleOrder}
                 variant="primary"
-                accentColor={currentTheme.accent}
+                accentColor={isTaxi ? "#fbbf24" : currentTheme.accent}
                 style={{ flex: 1 }}
               />
               <GlassButton
@@ -277,24 +375,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "600" as const,
-    color: commonColors.textPrimary,
-    marginBottom: 6,
-  },
-  serviceCard: {
-    padding: 16,
-  },
-  serviceText: {
-    fontSize: 15,
-    fontWeight: "500" as const,
-    color: commonColors.textPrimary,
-    textAlign: "center" as const,
-  },
-  button: {
-    marginTop: 8,
-  },
   form: {
     gap: 20,
   },
@@ -349,6 +429,11 @@ const styles = StyleSheet.create({
   inputGroup: {
     gap: 8,
   },
+  labelRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+  },
   label: {
     fontSize: 12,
     fontWeight: "500" as const,
@@ -370,10 +455,10 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 100,
-    textAlignVertical: "top",
+    textAlignVertical: "top" as const,
   },
   actions: {
-    flexDirection: "row",
+    flexDirection: "row" as const,
     gap: 12,
     marginTop: 8,
   },

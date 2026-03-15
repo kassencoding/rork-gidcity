@@ -221,7 +221,7 @@ export default function MainScreen() {
       }
     };
 
-    getLocation();
+    void getLocation();
   }, []);
 
 
@@ -738,24 +738,6 @@ export default function MainScreen() {
         <SettingsModal visible={settingsOpen} onClose={() => setSettingsOpen(false)} />
         <CalendarModal visible={calendarOpen} onClose={() => setCalendarOpen(false)} />
         <NotificationsModal visible={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
-        <AIAssistantModal
-          visible={aiAssistantOpen}
-          onClose={() => setAiAssistantOpen(false)}
-          onAction={(action: AIAction) => {
-            if (action.type === "order" && action.data) {
-              setAiOrderData(action.data);
-              setActiveModal("order");
-              setAiAssistantOpen(false);
-            } else if (
-              action.type === "navigate" &&
-              (action.data?.screen === "services" || action.data?.screen === "work")
-            ) {
-              setActiveMode(action.data.screen);
-              setAiAssistantOpen(false);
-            }
-          }}
-        />
-
         {activeModal === "order" && (
           <OrderModal
             visible
@@ -795,6 +777,22 @@ export default function MainScreen() {
         <DailyCheckinModal 
           visible={dailyCheckinOpen} 
           onClose={() => setDailyCheckinOpen(false)} 
+        />
+
+        <AIAssistantModal
+          visible={aiAssistantOpen}
+          onClose={() => setAiAssistantOpen(false)}
+          onAction={(action: AIAction) => {
+            if (action.type === "order" && action.data) {
+              setAiOrderData(action.data);
+              setActiveModal("order");
+            } else if (
+              action.type === "navigate" &&
+              (action.data?.screen === "services" || action.data?.screen === "work")
+            ) {
+              setActiveMode(action.data.screen);
+            }
+          }}
         />
 
         <Animated.View
