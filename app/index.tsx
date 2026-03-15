@@ -1,14 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
-import { View, StyleSheet, Animated, ActivityIndicator, Platform } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { View, StyleSheet, Animated, ActivityIndicator, Image, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { useAppState } from "@/contexts/AppStateContext";
-import { Image } from "expo-image";
+
+const { width, height } = Dimensions.get("window");
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { hasSeenWelcome, setHasSeenWelcome, isLoaded } = useAppState();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const [_imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -16,20 +16,20 @@ export default function WelcomeScreen() {
     if (hasSeenWelcome) {
       const timer = setTimeout(() => {
         router.replace("/main" as any);
-      }, 50);
+      }, 100);
       return () => clearTimeout(timer);
     }
 
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 400,
+      duration: 600,
       useNativeDriver: true,
     }).start();
 
     const navigateTimer = setTimeout(() => {
       setHasSeenWelcome(true);
       router.replace("/main" as any);
-    }, 2000);
+    }, 2500);
 
     return () => clearTimeout(navigateTimer);
   }, [hasSeenWelcome, isLoaded, router, fadeAnim, setHasSeenWelcome]);
@@ -37,14 +37,9 @@ export default function WelcomeScreen() {
   return (
     <View style={styles.container}>
       <Image
-        source={Platform.OS === "web"
-          ? require("@/assets/images/splash.png")
-          : require("@/assets/images/splash.png")
-        }
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        priority="high"
-        onLoad={() => setImageLoaded(true)}
+        source={require("@/assets/images/splash.png")}
+        style={styles.backgroundImage}
+        resizeMode="cover"
       />
       <Animated.View style={[styles.loaderContainer, { opacity: fadeAnim }]}>
         <ActivityIndicator size="large" color="#5bbde8" />
@@ -57,6 +52,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#0a1628",
+  },
+  backgroundImage: {
+    width: width,
+    height: height,
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
   },
   loaderContainer: {
     position: "absolute" as const,

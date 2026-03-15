@@ -247,15 +247,6 @@ export interface Translations {
   youAreHere: string;
   coordinates: string;
   viewMap: string;
-  fromWhere: string;
-  toWhere: string;
-  orderTime: string;
-  confirmOrder: string;
-  orderConfirmed: string;
-  orderCreatedByAI: string;
-  aiFillingOrder: string;
-  taxiFrom: string;
-  taxiTo: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -484,15 +475,6 @@ export const translations: Record<Language, Translations> = {
     youAreHere: "Вы здесь",
     coordinates: "Координаты",
     viewMap: "Открыть карту",
-    fromWhere: "Откуда",
-    toWhere: "Куда",
-    orderTime: "Время",
-    confirmOrder: "Заказ оформить?",
-    orderConfirmed: "Заказ оформлен!",
-    orderCreatedByAI: "Заказ создан AI-ассистентом",
-    aiFillingOrder: "AI заполняет заказ...",
-    taxiFrom: "Введите точку отправления",
-    taxiTo: "Введите точку назначения",
     
     backgroundOverlay: "Эффект фона",
     darker: "Темнее",
@@ -741,15 +723,6 @@ export const translations: Record<Language, Translations> = {
     youAreHere: "You are here",
     coordinates: "Coordinates",
     viewMap: "View Map",
-    fromWhere: "From",
-    toWhere: "To",
-    orderTime: "Time",
-    confirmOrder: "Confirm order?",
-    orderConfirmed: "Order confirmed!",
-    orderCreatedByAI: "Order created by AI assistant",
-    aiFillingOrder: "AI is filling the order...",
-    taxiFrom: "Enter pickup location",
-    taxiTo: "Enter destination",
     
     backgroundOverlay: "Background Overlay",
     darker: "Darker",
@@ -998,15 +971,6 @@ export const translations: Record<Language, Translations> = {
     youAreHere: "Сіз осындасыз",
     coordinates: "Координаттар",
     viewMap: "Картаны ашу",
-    fromWhere: "Қайдан",
-    toWhere: "Қайда",
-    orderTime: "Уақыт",
-    confirmOrder: "Тапсырысты рәсімдеу керек пе?",
-    orderConfirmed: "Тапсырыс рәсімделді!",
-    orderCreatedByAI: "Тапсырыс AI көмекшімен жасалды",
-    aiFillingOrder: "AI тапсырысты толтыруда...",
-    taxiFrom: "Шығу нүктесін енгізіңіз",
-    taxiTo: "Тағайындалған жерді енгізіңіз",
     
     backgroundOverlay: "Фон эффекті",
     darker: "Қараңғырақ",
