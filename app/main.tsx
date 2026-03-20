@@ -55,6 +55,7 @@ import { WalletModal } from "@/components/modals/WalletModal";
 import { MapModal } from "@/components/modals/MapModal";
 import { DailyCheckinModal } from "@/components/modals/DailyCheckinModal";
 import { useQuery } from "@tanstack/react-query";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 const { width, height } = Dimensions.get("window");
@@ -91,10 +92,30 @@ export default function MainScreen() {
   const [dailyCheckinOpen, setDailyCheckinOpen] = useState(false);
   const [checkinTriggered, setCheckinTriggered] = useState(false);
 
-  const floatingPos = useRef(new Animated.ValueXY({ x: width - 76, y: height * 0.55 })).current;
+  const defaultPos = { x: width - 76, y: height * 0.55 };
+  const floatingPos = useRef(new Animated.ValueXY(defaultPos)).current;
   const floatingScale = useRef(new Animated.Value(1)).current;
   const isDragging = useRef(false);
-  const lastPos = useRef({ x: width - 76, y: height * 0.55 });
+  const lastPos = useRef({ ...defaultPos });
+  const posLoaded = useRef(false);
+
+  useEffect(() => {
+    void AsyncStorage.getItem('ai_button_pos').then((stored) => {
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as { x: number; y: number };
+          const safeX = Math.max(8, Math.min(width - 68, parsed.x));
+          const safeY = Math.max(insets.top + 8, Math.min(height - 68 - insets.bottom, parsed.y));
+          lastPos.current = { x: safeX, y: safeY };
+          floatingPos.setValue({ x: safeX, y: safeY });
+        } catch (e) {
+          console.log('Failed to parse AI button position', e);
+        }
+      }
+      posLoaded.current = true;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -131,6 +152,7 @@ export default function MainScreen() {
           useNativeDriver: true,
           friction: 7,
         }).start();
+        AsyncStorage.setItem('ai_button_pos', JSON.stringify({ x: snapX, y: clampedY })).catch(() => {});
         if (!isDragging.current) {
           setAiAssistantOpen(true);
         }
