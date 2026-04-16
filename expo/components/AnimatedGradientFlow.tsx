@@ -1,128 +1,104 @@
 import React, { useEffect, useRef } from "react";
-import { View, StyleSheet, Animated, Dimensions } from "react-native";
-
-const { width, height } = Dimensions.get("window");
+import { StyleSheet, Animated, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface AnimatedGradientFlowProps {
   color: string;
 }
 
 export function AnimatedGradientFlow({ color }: AnimatedGradientFlowProps) {
-  const flow1 = useRef(new Animated.Value(0)).current;
-  const flow2 = useRef(new Animated.Value(0)).current;
-  const flow3 = useRef(new Animated.Value(0)).current;
+  const translateAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
     Animated.loop(
-      Animated.timing(flow1, {
-        toValue: 1,
-        duration: 15000,
-        useNativeDriver: true,
-      })
+      Animated.sequence([
+        Animated.timing(translateAnim, {
+          toValue: 1,
+          duration: 4000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateAnim, {
+          toValue: 0,
+          duration: 4000,
+          useNativeDriver: true,
+        }),
+      ])
     ).start();
 
     Animated.loop(
-      Animated.timing(flow2, {
-        toValue: 1,
-        duration: 20000,
-        useNativeDriver: true,
-      })
+      Animated.sequence([
+        Animated.timing(opacityAnim, {
+          toValue: 0.6,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 0.3,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
     ).start();
+  }, [translateAnim, opacityAnim]);
 
-    Animated.loop(
-      Animated.timing(flow3, {
-        toValue: 1,
-        duration: 25000,
-        useNativeDriver: true,
-      })
-    ).start();
-  }, [flow1, flow2, flow3]);
-
-  const translateX1 = flow1.interpolate({
+  const translateY = translateAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [-width, width],
-  });
-
-  const translateY1 = flow1.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, height * 0.5],
-  });
-
-  const translateX2 = flow2.interpolate({
-    inputRange: [0, 1],
-    outputRange: [width, -width],
-  });
-
-  const translateY2 = flow2.interpolate({
-    inputRange: [0, 1],
-    outputRange: [height * 0.3, height * 0.8],
-  });
-
-  const translateX3 = flow3.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-width * 0.5, width * 1.5],
-  });
-
-  const translateY3 = flow3.interpolate({
-    inputRange: [0, 1],
-    outputRange: [height * 0.6, height * 0.2],
+    outputRange: [0, 100],
   });
 
   return (
-    <View style={styles.container} pointerEvents="none">
+    <View style={styles.container}>
       <Animated.View
         style={[
-          styles.flowBlob,
+          styles.gradientContainer,
           {
-            backgroundColor: color,
-            opacity: 0.2,
-            transform: [{ translateX: translateX1 }, { translateY: translateY1 }],
+            transform: [{ translateY }],
+            opacity: opacityAnim,
           },
         ]}
-      />
+      >
+        <LinearGradient
+          colors={[color + "00", color + "40", color + "00"]}
+          style={styles.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        />
+      </Animated.View>
       <Animated.View
         style={[
-          styles.flowBlob,
+          styles.gradientContainer,
           {
-            backgroundColor: color,
-            opacity: 0.15,
-            width: 250,
-            height: 250,
-            borderRadius: 125,
-            transform: [{ translateX: translateX2 }, { translateY: translateY2 }],
+            transform: [{ translateY: Animated.multiply(translateAnim, -80) }],
+            opacity: opacityAnim,
           },
         ]}
-      />
-      <Animated.View
-        style={[
-          styles.flowBlob,
-          {
-            backgroundColor: color,
-            opacity: 0.25,
-            width: 180,
-            height: 180,
-            borderRadius: 90,
-            transform: [{ translateX: translateX3 }, { translateY: translateY3 }],
-          },
-        ]}
-      />
+      >
+        <LinearGradient
+          colors={[color + "00", color + "30", color + "00"]}
+          style={styles.gradient}
+          start={{ x: 0, y: 1 }}
+          end={{ x: 0, y: 0 }}
+        />
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFillObject,
     overflow: "hidden",
   },
-  flowBlob: {
+  gradientContainer: {
     position: "absolute",
-    width: 300,
-    height: 300,
-    borderRadius: 150,
+    top: -100,
+    left: 0,
+    right: 0,
+    height: 400,
+  },
+  gradient: {
+    width: "100%",
+    height: "100%",
   },
 });
