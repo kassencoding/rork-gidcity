@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "GiDCity",
-    "slug": "gidcity-mobile-app",
+    "name": "GidCity SuperApp",
+    "slug": "3js2o63zyshvs6b5hog3q",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -14,38 +14,15 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "app.rork.gidcity-mobile-app",
-      "infoPlist": {
-        "UIBackgroundModes": [
-          "audio",
-          "location"
-        ],
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
-        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos",
-        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
-        "NSLocationAlwaysUsageDescription": "Allow $(PRODUCT_NAME) to use your location.",
-        "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to use your location."
-      }
+      "supportsTablet": false,
+      "bundleIdentifier": "app.rork.3js2o63zyshvs6b5hog3q"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.gidcity_mobile_app",
-      "permissions": [
-        "RECORD_AUDIO",
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
-      ]
+      "package": "app.rork.3js2o63zyshvs6b5hog3q"
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -58,28 +35,7 @@
         }
       ],
       "expo-font",
-      "expo-web-browser",
-      [
-        "expo-av",
-        {
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
-        }
-      ],
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "The app accesses your photos to let you share them with your friends."
-        }
-      ],
-      [
-        "expo-location",
-        {
-          "isAndroidForegroundServiceEnabled": true,
-          "isAndroidBackgroundLocationEnabled": true,
-          "isIosBackgroundLocationEnabled": true,
-          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
-        }
-      ]
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

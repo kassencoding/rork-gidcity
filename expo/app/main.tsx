@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   StatusBar,
   Dimensions,
-  ImageBackground,
   Platform,
   PanResponder,
   Animated,
@@ -21,26 +20,17 @@ import {
   Bell,
   Briefcase,
   Home,
-  MessageCircle,
-  Search,
-  ClipboardList,
-  ChevronRight,
-  MapPin,
+  Megaphone,
+  Send,
+  Wallet,
 } from "lucide-react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
-import { AnimatedSphere } from "@/components/AnimatedSphere";
-import { AnimatedParticles } from "@/components/AnimatedParticles";
-import { AnimatedWaves } from "@/components/AnimatedWaves";
-import { AnimatedCubes } from "@/components/AnimatedCubes";
-import { AnimatedRings } from "@/components/AnimatedRings";
-import { AnimatedLines } from "@/components/AnimatedLines";
-import { AnimatedStars } from "@/components/AnimatedStars";
-import { AnimatedGradientFlow } from "@/components/AnimatedGradientFlow";
-import { AnimatedSparkles } from "@/components/AnimatedSparkles";
-import { AnimatedHexagons } from "@/components/AnimatedHexagons";
+import { GlassSphere } from "@/components/GlassSphere";
+import { ChromaticGlassCard } from "@/components/ChromaticGlassCard";
+import { GlassTabButton } from "@/components/GlassTabButton";
+import { GlassMapPanel } from "@/components/GlassMapPanel";
 import { useAppState } from "@/contexts/AppStateContext";
-import { commonColors } from "@/constants/colors";
 import { SettingsModal } from "@/components/modals/SettingsModal";
 import { CalendarModal } from "@/components/modals/CalendarModal";
 import { NotificationsModal } from "@/components/modals/NotificationsModal";
@@ -57,7 +47,6 @@ import { DailyCheckinModal } from "@/components/modals/DailyCheckinModal";
 import { useQuery } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-
 const { width, height } = Dimensions.get("window");
 
 type MenuItemType =
@@ -72,10 +61,8 @@ type MenuItemType =
   | "myAds"
   | "news";
 
-
-
 export default function MainScreen() {
-  const { currentTheme, t, city, reminders, customBackground, backgroundOverlay, animationType, lastAICheckin, aiCheckinEnabled, isLoaded } = useAppState();
+  const { reminders, city, lastAICheckin, aiCheckinEnabled, isLoaded } = useAppState();
   const insets = useSafeAreaInsets();
   const [activeMode, setActiveMode] = useState<"services" | "work">("services");
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -114,8 +101,7 @@ export default function MainScreen() {
       }
       posLoaded.current = true;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [insets.top, insets.bottom]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -160,7 +146,6 @@ export default function MainScreen() {
     })
   ).current;
 
-
   const { data: weather } = useQuery({
     queryKey: ["weather", city.name],
     queryFn: async () => {
@@ -174,7 +159,7 @@ export default function MainScreen() {
         };
       } catch (error) {
         console.log("Weather fetch error:", error);
-        return { temp: 0 };
+        return { temp: 10 };
       }
     },
     refetchInterval: 600000,
@@ -193,11 +178,9 @@ export default function MainScreen() {
     
     const shouldShowCheckin = () => {
       if (!lastAICheckin) return true;
-      
       const lastCheckin = new Date(lastAICheckin);
       const now = new Date();
       const hoursDiff = (now.getTime() - lastCheckin.getTime()) / (1000 * 60 * 60);
-      
       return hoursDiff >= 12;
     };
     
@@ -206,7 +189,6 @@ export default function MainScreen() {
         setDailyCheckinOpen(true);
         setCheckinTriggered(true);
       }, 2000);
-      
       return () => clearTimeout(timer);
     }
   }, [isLoaded, aiCheckinEnabled, lastAICheckin, checkinTriggered]);
@@ -246,8 +228,6 @@ export default function MainScreen() {
     void getLocation();
   }, []);
 
-
-
   const handleMenuPress = (id: MenuItemType) => {
     setActiveModal(id);
   };
@@ -255,102 +235,20 @@ export default function MainScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      {customBackground ? (
-        <ImageBackground
-          source={{ uri: customBackground }}
-          style={styles.gradient}
-          imageStyle={{ opacity: 1 }}
-          resizeMode="cover"
-        >
-          {backgroundOverlay !== "none" && (
-            <View style={[
-              styles.overlayLayer,
-              backgroundOverlay === "dark" && styles.overlayDark,
-              backgroundOverlay === "light" && styles.overlayLight,
-              backgroundOverlay === "blur" && styles.overlayBlur,
-            ]} />
-          )}
-          {renderContent()}
-        </ImageBackground>
-      ) : (
-        <View style={styles.gradient}>
-          <LinearGradient
-            colors={currentTheme.gradient as any}
-            style={styles.gradientOverlay}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          />
-          {renderContent()}
-        </View>
-      )}
-
-      <Animated.View
-        style={[
-          styles.floatingButton,
-          {
-            transform: [
-              { translateX: floatingPos.x },
-              { translateY: floatingPos.y },
-              { scale: floatingScale },
-            ],
-          },
-        ]}
-        {...panResponder.panHandlers}
-        testID="ai-floating-button"
+      <LinearGradient
+        colors={["#1a0a2e", "#16213e", "#0f3460", "#1a5f7a"]}
+        style={styles.gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
-        <Image
-          source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/s00togqz2vrsgw7gzi3og' }}
-          style={styles.floatingButtonImage}
+        <LinearGradient
+          colors={["rgba(138, 43, 226, 0.3)", "rgba(64, 224, 208, 0.2)", "transparent"]}
+          style={styles.gradientOverlay}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 0.6 }}
         />
-        <View style={styles.floatingButtonOverlay}>
-          <Text style={styles.floatingButtonText}>AI</Text>
-        </View>
-      </Animated.View>
-
-      <AIAssistantModal
-        visible={aiAssistantOpen}
-        onClose={() => setAiAssistantOpen(false)}
-        onAction={(action: AIAction) => {
-          if (action.type === "order" && action.data) {
-            setAiOrderData(action.data);
-            setActiveModal("order");
-          } else if (
-            action.type === "navigate" &&
-            (action.data?.screen === "services" || action.data?.screen === "work")
-          ) {
-            setActiveMode(action.data.screen);
-            setAiAssistantOpen(false);
-          }
-        }}
-      />
-    </View>
-  );
-
-  function renderContent() {
-    return (
-      <>
-        {animationType !== "none" && (
-          <View style={styles.animationLayer} pointerEvents="none">
-            {animationType === "sphere" && (
-              <View style={styles.sphereAnimation}>
-                <AnimatedSphere size={300} colors={[currentTheme.accent, currentTheme.neon] as any} />
-              </View>
-            )}
-            {animationType === "particles" && <AnimatedParticles color={currentTheme.neon} />}
-            {animationType === "waves" && <AnimatedWaves color={currentTheme.accent} />}
-            {animationType === "cubes" && <AnimatedCubes color={currentTheme.neon} />}
-            {animationType === "rings" && <AnimatedRings color={currentTheme.accent} />}
-            {animationType === "lines" && <AnimatedLines color={currentTheme.neon} />}
-            {animationType === "stars" && <AnimatedStars color={currentTheme.accent} />}
-            {animationType === "gradientFlow" && <AnimatedGradientFlow color={currentTheme.neon} />}
-            {animationType === "sparkles" && <AnimatedSparkles color={currentTheme.accent} />}
-            {animationType === "hexagons" && <AnimatedHexagons color={currentTheme.neon} />}
-          </View>
-        )}
-
-        <SafeAreaView style={[styles.safeArea, { paddingTop: insets.top }]}
-          edges={['top', 'left', 'right']}
-        >
+        
+        <SafeAreaView style={[styles.safeArea, { paddingTop: insets.top }]} edges={['top', 'left', 'right']}>
           <ScrollView
             style={styles.scrollView}
             contentContainerStyle={[styles.scrollContent, { paddingBottom: 50 + insets.bottom }]}
@@ -358,449 +256,181 @@ export default function MainScreen() {
           >
             <View style={styles.headerRow}>
               <View>
-                <Text style={[styles.title, { color: currentTheme.neon }]} testID="title-gidcity">
-                  {t.gidCity}
+                <Text style={styles.title} testID="title-gidcity">
+                  GidCity
                 </Text>
                 <Text style={styles.cityText} testID="city-label">
-                  {city.name}
-                  {weather ? ` • ${weather.temp}°C` : ""}
+                  Алматы • {weather?.temp || 10}°С
                 </Text>
               </View>
 
               <View style={styles.headerActions}>
-                <TouchableOpacity
-                  style={styles.calendarChip}
+                <GlassSphere
+                  size={42}
+                  textContent={dateLabel}
+                  textStyle={{ fontSize: 9, letterSpacing: 0 }}
                   onPress={() => setCalendarOpen(true)}
-                  activeOpacity={0.8}
-                  testID="calendar-button"
-                >
-                  <Calendar size={14} color={currentTheme.neon} />
-                  <Text style={[styles.calendarText, { color: currentTheme.neon }]}>{dateLabel}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.iconCircle}
+                />
+                <GlassSphere
+                  size={42}
+                  icon={Bell}
+                  badge={reminders.length > 0 ? reminders.length : undefined}
                   onPress={() => setNotificationsOpen(true)}
-                  activeOpacity={0.8}
-                  testID="notifications-button"
-                >
-                  <Bell size={16} color={currentTheme.accent} />
-                  {reminders.length > 0 && (
-                    <View style={[styles.badge, { backgroundColor: currentTheme.accent }]}>
-                      <Text style={styles.badgeText}>{reminders.length}</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.iconCircle}
+                />
+                <GlassSphere
+                  size={42}
+                  icon={Settings}
                   onPress={() => setSettingsOpen(true)}
-                  activeOpacity={0.8}
-                  testID="settings-button"
-                >
-                  <Settings size={16} color={currentTheme.neon} />
-                </TouchableOpacity>
+                />
               </View>
             </View>
 
             <View style={styles.modeSwitcher}>
-              <TouchableOpacity
-                style={[styles.modeButton, activeMode === "services" && [styles.modeButtonActive, {
-                  backgroundColor: currentTheme.accent + "30",
-                }]]}
+              <GlassTabButton
+                title="УСЛУГИ"
+                icon={Home}
+                isActive={activeMode === "services"}
                 onPress={() => setActiveMode("services")}
-                activeOpacity={0.8}
-                testID="mode-services"
-              >
-                <Home size={18} color={activeMode === "services" ? currentTheme.accent : "rgba(255,255,255,0.5)"} />
-                <Text style={[
-                  styles.modeText,
-                  activeMode === "services" && [styles.modeTextActive, { color: currentTheme.accent }],
-                  activeMode !== "services" && styles.modeTextInactive,
-                ]} numberOfLines={1}>
-                  {t.services}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modeButton, activeMode === "work" && [styles.modeButtonActive, {
-                  backgroundColor: currentTheme.accent + "30",
-                }]]}
+              />
+              <GlassTabButton
+                title="РАБОТА"
+                icon={Briefcase}
+                isActive={activeMode === "work"}
                 onPress={() => setActiveMode("work")}
-                activeOpacity={0.8}
-                testID="mode-work"
-              >
-                <Briefcase size={18} color={activeMode === "work" ? currentTheme.accent : "rgba(255,255,255,0.5)"} />
-                <Text style={[
-                  styles.modeText,
-                  activeMode === "work" && [styles.modeTextActive, { color: currentTheme.accent }],
-                  activeMode !== "work" && styles.modeTextInactive,
-                ]} numberOfLines={1}>
-                  {t.work}
-                </Text>
-              </TouchableOpacity>
+              />
             </View>
 
             <View style={styles.mainButtonsContainer}>
               {activeMode === "services" ? (
                 <>
-                  <TouchableOpacity
-                    style={styles.tallButton}
-                    activeOpacity={0.8}
+                  <ChromaticGlassCard
+                    title="ГОРОДСКОЙ ЧАТ"
+                    description="Общайтесь с жителями города в реальном времени"
+                    crystallineType="city"
                     onPress={() => handleMenuPress("chat")}
-                    testID="chat-button"
-                  >
-                    <ImageBackground
-                      source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/u8smzfoyhq46ob7y2j6wr' }}
-                      style={styles.bookingButtonBg}
-                      imageStyle={styles.bookingButtonImage}
-                      resizeMode="cover"
-                    >
-                      <View style={styles.bookingOverlay}>
-                        <View style={styles.bookingTextContainer}>
-                          <Text style={styles.tallButtonTitle} numberOfLines={1}>
-                            {t.cityChat.toUpperCase()}
-                          </Text>
-                          <Text style={styles.buttonDescription} numberOfLines={1}>
-                            {t.cityChatDesc}
-                          </Text>
-                        </View>
-                      </View>
-                    </ImageBackground>
-                  </TouchableOpacity>
+                  />
 
-                  <TouchableOpacity
-                    style={styles.tallButton}
-                    activeOpacity={0.8}
+                  <ChromaticGlassCard
+                    title="ЗАКАЗ"
+                    description="Такси, доставка, курьер и услуги мастеров"
+                    crystallineType="order"
                     onPress={() => handleMenuPress("order")}
-                    testID="order-button"
-                  >
-                    <ImageBackground
-                      source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/l07d1tvcealiqgf2shad2' }}
-                      style={styles.bookingButtonBg}
-                      imageStyle={styles.bookingButtonImage}
-                      resizeMode="cover"
-                    >
-                      <View style={styles.bookingOverlay}>
-                        <View style={styles.bookingTextContainer}>
-                          <Text style={styles.tallButtonTitle} numberOfLines={1}>
-                            {t.order.toUpperCase()}
-                          </Text>
-                          <Text style={styles.buttonDescription} numberOfLines={1}>
-                            {t.orderDesc}
-                          </Text>
-                        </View>
-                      </View>
-                    </ImageBackground>
-                  </TouchableOpacity>
+                  />
 
-                  <TouchableOpacity
-                    style={styles.tallButton}
-                    activeOpacity={0.8}
+                  <ChromaticGlassCard
+                    title="ЗАБРОНИРОВАТЬ"
+                    description="Столики, отели, tickets и appointments"
+                    crystallineType="booking"
                     onPress={() => handleMenuPress("booking")}
-                    testID="booking-button"
-                  >
-                    <ImageBackground
-                      source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/6hyar3k1zdowxcp3ydhe4' }}
-                      style={styles.bookingButtonBg}
-                      imageStyle={styles.bookingButtonImage}
-                      resizeMode="cover"
-                    >
-                      <View style={styles.bookingOverlay}>
-                        <View style={styles.bookingTextContainer}>
-                          <Text style={styles.tallButtonTitle} numberOfLines={1}>
-                            {t.booking.toUpperCase()}
-                          </Text>
-                          <Text style={styles.buttonDescription} numberOfLines={1}>
-                            {t.bookingDesc}
-                          </Text>
-                        </View>
-                      </View>
-                    </ImageBackground>
-                  </TouchableOpacity>
+                  />
 
                   <View style={styles.bottomButtonsRow}>
-                    <TouchableOpacity
-                      style={styles.rectButton}
-                      activeOpacity={0.8}
+                    <GlassSphere
+                      size={56}
+                      icon={Megaphone}
+                      label="Объявления услуг"
                       onPress={() => handleMenuPress("ads")}
-                      testID="ads-button"
-                    >
-                      <ImageBackground
-                        source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/w99vlp3w73cnr9w2c6dr2' }}
-                        style={styles.walletButtonBg}
-                        imageStyle={styles.walletButtonImageTransparent}
-                        resizeMode="cover"
-                      >
-                        <View style={styles.walletTransparentOverlay}>
-                          <View style={styles.walletTextOverlayTransparent}>
-                            <Text style={styles.walletTitle} numberOfLines={1}>
-                              {t.serviceAds}
-                            </Text>
-                            <Text style={styles.walletDesc} numberOfLines={1}>
-                              {t.serviceAdsDesc}
-                            </Text>
-                          </View>
-                        </View>
-                      </ImageBackground>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.rectButton}
-                      activeOpacity={0.8}
+                    />
+                    <GlassSphere
+                      size={56}
+                      icon={Send}
+                      label="Мессенджер"
                       onPress={() => handleMenuPress("messenger")}
-                      testID="messenger-button"
-                    >
-                      <ImageBackground
-                        source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/qtdh3bloqsf4rlnegm5ng' }}
-                        style={styles.walletButtonBg}
-                        imageStyle={styles.walletButtonImageTransparent}
-                        resizeMode="cover"
-                      >
-                        <View style={styles.walletTransparentOverlay}>
-                          <View style={styles.walletTextOverlayTransparent}>
-                            <Text style={styles.walletTitle} numberOfLines={1}>
-                              {t.messenger}
-                            </Text>
-                            <Text style={styles.walletDesc} numberOfLines={1}>
-                              {t.messengerDesc}
-                            </Text>
-                          </View>
-                        </View>
-                      </ImageBackground>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.rectButton}
-                      activeOpacity={0.8}
+                    />
+                    <GlassSphere
+                      size={56}
+                      icon={Wallet}
+                      label="Кошелек"
                       onPress={() => handleMenuPress("wallet")}
-                      testID="wallet-button"
-                    >
-                      <ImageBackground
-                        source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/y1t9nmlp9bssi1pvuecw0' }}
-                        style={styles.walletButtonBg}
-                        imageStyle={styles.walletButtonImageTransparent}
-                        resizeMode="contain"
-                      >
-                        <View style={styles.walletTransparentOverlay}>
-                          <View style={styles.walletTextOverlayTransparent}>
-                            <Text style={styles.walletTitle} numberOfLines={1}>
-                              {t.wallet}
-                            </Text>
-                            <Text style={styles.walletDesc} numberOfLines={1}>
-                              {t.walletDesc}
-                            </Text>
-                          </View>
-                        </View>
-                      </ImageBackground>
-                    </TouchableOpacity>
+                    />
+                    <GlassSphere
+                      size={56}
+                      textContent="AI"
+                      label="Ассистент"
+                      onPress={() => setAiAssistantOpen(true)}
+                    />
                   </View>
 
-                  <TouchableOpacity
-                    style={styles.mapPreview}
-                    activeOpacity={0.8}
-                    onPress={() => setMapOpen(true)}
-                    testID="map-preview"
-                  >
-                    <View style={styles.mapPreviewInner}>
-                      {userLocation && Platform.OS !== "web" ? (
-                        <MapView
-                          style={styles.mapPreviewMap}
-                          provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-                          scrollEnabled={false}
-                          zoomEnabled={false}
-                          rotateEnabled={false}
-                          pitchEnabled={false}
-                          region={{
-                            latitude: userLocation.latitude,
-                            longitude: userLocation.longitude,
-                            latitudeDelta: 0.01,
-                            longitudeDelta: 0.01,
-                          }}
-                        >
-                          <Marker coordinate={userLocation} />
-                        </MapView>
-                      ) : (
-                        <View style={styles.mapPlaceholder}>
-                          <View style={[styles.mapIconContainer, { backgroundColor: currentTheme.accent + "30" }]}>
-                            <MapPin size={24} color={currentTheme.accent} strokeWidth={2} />
-                          </View>
-                        </View>
-                      )}
-                      <View style={styles.mapOverlay}>
-                        <Text style={styles.mapPreviewText}>{t.viewMap || "View Map"}</Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-
+                  <GlassMapPanel onPress={() => setMapOpen(true)} />
                 </>
               ) : (
                 <>
-                  <TouchableOpacity
-                    style={styles.tallButton}
-                    activeOpacity={0.8}
+                  <ChromaticGlassCard
+                    title="НАЙТИ ЗАКАЗЫ"
+                    description="Просмотр доступных заказов поблизости"
+                    crystallineType="order"
                     onPress={() => handleMenuPress("findOrders")}
-                    testID="find-orders-button"
-                  >
-                    <View style={styles.frostedButtonInner}>
-                      <View style={styles.buttonContentRow}>
-                        <View style={[styles.serviceIconContainer, { backgroundColor: "rgba(16, 185, 129, 0.3)" }]}>
-                          <Search size={22} color="#10b981" strokeWidth={2} />
-                        </View>
-                        <View style={styles.buttonTextContainer}>
-                          <Text style={styles.tallButtonTitle} numberOfLines={1}>
-                            {t.findOrders}
-                          </Text>
-                          <Text style={styles.buttonDescription} numberOfLines={1}>
-                            {t.findOrdersDesc}
-                          </Text>
-                        </View>
-                        <ChevronRight size={18} color="rgba(255,255,255,0.4)" />
-                      </View>
-                    </View>
-                  </TouchableOpacity>
+                  />
 
-                  <TouchableOpacity
-                    style={styles.tallButton}
-                    activeOpacity={0.8}
+                  <ChromaticGlassCard
+                    title="МОИ ЗАКАЗЫ"
+                    description="Управление вашими текущими заказами"
+                    crystallineType="booking"
                     onPress={() => handleMenuPress("myOrders")}
-                    testID="my-orders-button"
-                  >
-                    <View style={styles.frostedButtonInner}>
-                      <View style={styles.buttonContentRow}>
-                        <View style={[styles.serviceIconContainer, { backgroundColor: "rgba(168, 85, 247, 0.25)" }]}>
-                          <ClipboardList size={22} color="#a855f7" strokeWidth={2} />
-                        </View>
-                        <View style={styles.buttonTextContainer}>
-                          <Text style={styles.tallButtonTitle} numberOfLines={1}>
-                            {t.myOrders}
-                          </Text>
-                          <Text style={styles.buttonDescription} numberOfLines={1}>
-                            {t.myOrdersDesc}
-                          </Text>
-                        </View>
-                        <ChevronRight size={18} color="rgba(255,255,255,0.4)" />
-                      </View>
-                    </View>
-                  </TouchableOpacity>
+                  />
 
                   <View style={styles.bottomButtonsRow}>
-                    <TouchableOpacity
-                      style={styles.rectButton}
-                      activeOpacity={0.8}
-                      onPress={() => handleMenuPress("chat")}
-                      testID="chat-button-work"
-                    >
-                      <View style={styles.frostedRectInner}>
-                        <View style={[styles.smallIconContainer, { backgroundColor: "rgba(96, 165, 250, 0.2)" }]}>
-                          <MessageCircle size={18} color="#60a5fa" strokeWidth={2} />
-                        </View>
-                        <Text style={styles.rectTitle} numberOfLines={1}>
-                          {t.cityChat}
-                        </Text>
-                        <Text style={styles.rectDesc} numberOfLines={1}>
-                          {t.cityChatDesc}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.rectButton}
-                      activeOpacity={0.8}
+                    <GlassSphere
+                      size={56}
+                      icon={Megaphone}
+                      label="Объявления услуг"
+                      onPress={() => handleMenuPress("ads")}
+                    />
+                    <GlassSphere
+                      size={56}
+                      icon={Send}
+                      label="Мессенджер"
                       onPress={() => handleMenuPress("messenger")}
-                      testID="messenger-button-work"
-                    >
-                      <ImageBackground
-                        source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/qtdh3bloqsf4rlnegm5ng' }}
-                        style={styles.walletButtonBg}
-                        imageStyle={styles.walletButtonImageTransparent}
-                        resizeMode="cover"
-                      >
-                        <View style={styles.walletTransparentOverlay}>
-                          <View style={styles.walletTextOverlayTransparent}>
-                            <Text style={styles.walletTitle} numberOfLines={1}>
-                              {t.messenger}
-                            </Text>
-                            <Text style={styles.walletDesc} numberOfLines={1}>
-                              {t.messengerDesc}
-                            </Text>
-                          </View>
-                        </View>
-                      </ImageBackground>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.rectButton}
-                      activeOpacity={0.8}
+                    />
+                    <GlassSphere
+                      size={56}
+                      icon={Wallet}
+                      label="Кошелек"
                       onPress={() => handleMenuPress("wallet")}
-                      testID="wallet-button-work"
-                    >
-                      <ImageBackground
-                        source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/y1t9nmlp9bssi1pvuecw0' }}
-                        style={styles.walletButtonBg}
-                        imageStyle={styles.walletButtonImageTransparent}
-                        resizeMode="contain"
-                      >
-                        <View style={styles.walletTransparentOverlay}>
-                          <View style={styles.walletTextOverlayTransparent}>
-                            <Text style={styles.walletTitle} numberOfLines={1}>
-                              {t.wallet}
-                            </Text>
-                            <Text style={styles.walletDesc} numberOfLines={1}>
-                              {t.walletDesc}
-                            </Text>
-                          </View>
-                        </View>
-                      </ImageBackground>
-                    </TouchableOpacity>
+                    />
+                    <GlassSphere
+                      size={56}
+                      textContent="AI"
+                      label="Ассистент"
+                      onPress={() => setAiAssistantOpen(true)}
+                    />
                   </View>
 
-                  <TouchableOpacity
-                    style={styles.mapPreview}
-                    activeOpacity={0.8}
-                    onPress={() => setMapOpen(true)}
-                    testID="map-preview-work"
-                  >
-                    <View style={styles.mapPreviewInner}>
-                      {userLocation && Platform.OS !== "web" ? (
-                        <MapView
-                          style={styles.mapPreviewMap}
-                          provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-                          scrollEnabled={false}
-                          zoomEnabled={false}
-                          rotateEnabled={false}
-                          pitchEnabled={false}
-                          region={{
-                            latitude: userLocation.latitude,
-                            longitude: userLocation.longitude,
-                            latitudeDelta: 0.01,
-                            longitudeDelta: 0.01,
-                          }}
-                        >
-                          <Marker coordinate={userLocation} />
-                        </MapView>
-                      ) : (
-                        <View style={styles.mapPlaceholder}>
-                          <View style={[styles.mapIconContainer, { backgroundColor: currentTheme.accent + "30" }]}>
-                            <MapPin size={24} color={currentTheme.accent} strokeWidth={2} />
-                          </View>
-                        </View>
-                      )}
-                      <View style={styles.mapOverlay}>
-                        <Text style={styles.mapPreviewText}>{t.viewMap || "View Map"}</Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-
+                  <GlassMapPanel onPress={() => setMapOpen(true)} />
                 </>
               )}
             </View>
 
-            <Text style={styles.footer}>{t.footer}</Text>
+            <Text style={styles.footer}>KASSEN Technology Inc.</Text>
           </ScrollView>
         </SafeAreaView>
+
+        <Animated.View
+          style={[
+            styles.floatingButton,
+            {
+              transform: [
+                { translateX: floatingPos.x },
+                { translateY: floatingPos.y },
+                { scale: floatingScale },
+              ],
+            },
+          ]}
+          {...panResponder.panHandlers}
+          testID="ai-floating-button"
+        >
+          <Image
+            source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/s00togqz2vrsgw7gzi3og' }}
+            style={styles.floatingButtonImage}
+          />
+          <View style={styles.floatingButtonOverlay}>
+            <Text style={styles.floatingButtonText}>AI</Text>
+          </View>
+        </Animated.View>
 
         <SettingsModal visible={settingsOpen} onClose={() => setSettingsOpen(false)} />
         <CalendarModal visible={calendarOpen} onClose={() => setCalendarOpen(false)} />
         <NotificationsModal visible={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
-
 
         {activeModal === "order" && (
           <OrderModal
@@ -843,15 +473,31 @@ export default function MainScreen() {
           onClose={() => setDailyCheckinOpen(false)} 
         />
 
-      </>
-    );
-  }
+        <AIAssistantModal
+          visible={aiAssistantOpen}
+          onClose={() => setAiAssistantOpen(false)}
+          onAction={(action: AIAction) => {
+            if (action.type === "order" && action.data) {
+              setAiOrderData(action.data);
+              setActiveModal("order");
+            } else if (
+              action.type === "navigate" &&
+              (action.data?.screen === "services" || action.data?.screen === "work")
+            ) {
+              setActiveMode(action.data.screen);
+              setAiAssistantOpen(false);
+            }
+          }}
+        />
+      </LinearGradient>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#1a0a2e",
   },
   gradient: {
     flex: 1,
@@ -861,7 +507,6 @@ const styles = StyleSheet.create({
     width,
     height,
   },
-
   safeArea: {
     flex: 1,
   },
@@ -870,97 +515,41 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 0,
+    paddingTop: 8,
   },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 20,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "700" as const,
+    fontSize: 26,
+    fontWeight: "800",
+    color: "#40e0d0",
     letterSpacing: -0.5,
+    textShadowColor: "rgba(64, 224, 208, 0.5)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 15,
   },
   cityText: {
-    marginTop: 3,
-    fontSize: 11,
-    fontWeight: "500" as const,
-    color: "rgba(255,255,255,0.6)",
-    letterSpacing: 0.2,
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.65)",
+    letterSpacing: 0.3,
   },
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-  calendarChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-  },
-  calendarText: {
-    fontSize: 10,
-    fontWeight: "600" as const,
-    letterSpacing: 0.2,
-  },
-  iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative" as const,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-  },
-  badge: {
-    position: "absolute" as const,
-    top: -3,
-    right: -3,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 4,
-    borderWidth: 2,
-    borderColor: "#000000",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  badgeText: {
-    color: commonColors.white,
-    fontSize: 10,
-    fontWeight: "900" as const,
-  },
   floatingButton: {
-    position: "absolute" as const,
+    position: "absolute",
     width: 60,
     height: 60,
     borderRadius: 30,
-    overflow: "hidden" as const,
+    overflow: "hidden",
     shadowColor: "#0891b2",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
@@ -974,326 +563,47 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
   floatingButtonOverlay: {
-    position: "absolute" as const,
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
     borderRadius: 30,
     backgroundColor: "rgba(0,0,0,0.3)",
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.25)",
   },
   floatingButtonText: {
     color: "#ffffff",
     fontSize: 14,
-    fontWeight: "800" as const,
+    fontWeight: "800",
     letterSpacing: 1,
   },
   modeSwitcher: {
     flexDirection: "row",
-    gap: 6,
-    marginBottom: 12,
-    backgroundColor: "rgba(0,0,0,0.25)",
-    borderRadius: 12,
-    padding: 3,
-  },
-  modeButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    flex: 1,
-    justifyContent: "center",
-    borderRadius: 10,
-  },
-  modeButtonActive: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  modeText: {
-    fontSize: 12,
-    fontWeight: "600" as const,
-    letterSpacing: 0.2,
-  },
-  modeTextActive: {
-    textShadowColor: "rgba(0,0,0,0.3)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  modeTextInactive: {
-    color: "rgba(255,255,255,0.5)",
+    gap: 10,
+    marginBottom: 16,
+    backgroundColor: "rgba(0,0,0,0.2)",
+    borderRadius: 18,
+    padding: 4,
   },
   mainButtonsContainer: {
-    gap: 10,
-    marginBottom: 12,
-  },
-  tallButton: {
-    height: 68,
-    borderRadius: 16,
-    overflow: "hidden" as const,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  frostedButtonInner: {
-    flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-    position: "relative" as const,
-    overflow: "hidden" as const,
-  },
-  buttonContentRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 14,
-  },
-  serviceIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-  },
-  buttonTextContainer: {
-    flex: 1,
-    gap: 2,
-  },
-  tallButtonTitle: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "600" as const,
-    letterSpacing: -0.2,
-  },
-  buttonDescription: {
-    color: "rgba(255,255,255,0.5)",
-    fontSize: 10,
-    fontWeight: "500" as const,
-    letterSpacing: -0.1,
+    gap: 12,
   },
   bottomButtonsRow: {
     flexDirection: "row",
-    gap: 10,
-    marginTop: 4,
-  },
-  rectButton: {
-    flex: 1,
-    height: 82,
-    borderRadius: 14,
-    overflow: "hidden" as const,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  frostedRectInner: {
-    flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 14,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    gap: 5,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-    position: "relative" as const,
-    overflow: "hidden" as const,
-  },
-  smallIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-  },
-  walletCustomIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-  },
-  walletButtonBg: {
-    flex: 1,
-    borderRadius: 14,
-    overflow: "hidden" as const,
-    justifyContent: "flex-end" as const,
-  },
-  walletButtonImage: {
-    borderRadius: 14,
-  },
-  walletButtonImageTransparent: {
-    borderRadius: 14,
-    opacity: 0.9,
-  },
-  walletTransparentOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 14,
-    justifyContent: "flex-end" as const,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-  },
-  walletTextOverlay: {
-    backgroundColor: "rgba(0,0,0,0.55)",
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    alignItems: "center" as const,
-  },
-  walletTextOverlayTransparent: {
-    backgroundColor: "rgba(0,0,0,0.45)",
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    alignItems: "center" as const,
-    borderBottomLeftRadius: 14,
-    borderBottomRightRadius: 14,
-  },
-  walletTitle: {
-    color: "#ffffff",
-    fontSize: 11,
-    fontWeight: "600" as const,
-    letterSpacing: -0.2,
-    textAlign: "center" as const,
-  },
-  walletDesc: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 9,
-    fontWeight: "500" as const,
-    textAlign: "center" as const,
-    letterSpacing: -0.1,
-  },
-  rectTitle: {
-    color: "#ffffff",
-    fontSize: 11,
-    fontWeight: "600" as const,
-    letterSpacing: -0.2,
-    textAlign: "center" as const,
-  },
-  rectDesc: {
-    color: "rgba(255,255,255,0.45)",
-    fontSize: 9,
-    fontWeight: "500" as const,
-    textAlign: "center" as const,
-    letterSpacing: -0.1,
+    justifyContent: "space-between",
+    marginTop: 8,
+    paddingHorizontal: 4,
   },
   footer: {
-    textAlign: "center" as const,
-    color: "rgba(255,255,255,0.3)",
-    fontSize: 9,
-    marginTop: 14,
-    fontWeight: "400" as const,
-    letterSpacing: 0.2,
-  },
-  mapPreview: {
-    height: 140,
-    borderRadius: 16,
-    overflow: "hidden" as const,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 6,
-    marginTop: 6,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-  },
-  mapPreviewInner: {
-    flex: 1,
-    position: "relative" as const,
-  },
-  mapPreviewMap: {
-    flex: 1,
-  },
-  mapPlaceholder: {
-    flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-  },
-  mapIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-  },
-  mapOverlay: {
-    position: "absolute" as const,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  mapPreviewText: {
-    color: "#ffffff",
-    fontSize: 12,
-    fontWeight: "600" as const,
-    textAlign: "center" as const,
-    letterSpacing: -0.2,
-  },
-  overlayLayer: {
-    position: "absolute" as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  overlayDark: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  overlayLight: {
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-  },
-  overlayBlur: {
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-  },
-  animationLayer: {
-    position: "absolute" as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  sphereAnimation: {
-    position: "absolute" as const,
-    top: -100,
-    right: -100,
-    opacity: 0.5,
-  },
-  bookingButtonBg: {
-    flex: 1,
-    borderRadius: 16,
-    overflow: "hidden" as const,
-    justifyContent: "center" as const,
-  },
-  bookingButtonImage: {
-    borderRadius: 16,
-    opacity: 0.95,
-  },
-  bookingOverlay: {
-    flex: 1,
-    justifyContent: "center" as const,
-    alignItems: "flex-end" as const,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-  },
-  bookingTextContainer: {
-    gap: 2,
-    alignItems: "flex-end" as const,
+    textAlign: "center",
+    color: "rgba(255,255,255,0.35)",
+    fontSize: 10,
+    marginTop: 20,
+    fontWeight: "400",
+    letterSpacing: 0.3,
   },
 });
